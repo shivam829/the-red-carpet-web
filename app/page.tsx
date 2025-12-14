@@ -32,9 +32,13 @@ export default function HomePage() {
         </p>
 
         {/* CTA */}
-        <button className="px-10 py-4 bg-redcarpet rounded-xl text-lg hover:bg-gold hover:text-black transition">
-          Reserve Your Entry
-        </button>
+       <a
+  href="#passes"
+  className="px-10 py-4 bg-redcarpet rounded-xl text-lg hover:bg-gold hover:text-black transition inline-block"
+>
+  Reserve Your Entry
+</a>
+
       </section>
 
       {/* EXPERIENCE SECTION */}

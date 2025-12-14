@@ -47,7 +47,8 @@ export default function Passes() {
   ];
 
   return (
-    <section className="py-24 px-6 bg-transparent">
+    <section id="passes" className="py-24 px-6 bg-transparent">
+
       <h2 className="text-4xl font-bold text-gold text-center mb-12">
         Passes & Pricing
       </h2>
