@@ -7,11 +7,9 @@ export interface BookingDocument extends Document {
   passName: string;
   phase: number;
   price: number;
-
   paymentId?: string;
   orderId?: string;
   qrCode?: string;
-
   status: "PENDING" | "PAID" | "FAILED";
   checkedIn: boolean;
 }
@@ -21,25 +19,18 @@ const BookingSchema = new Schema<BookingDocument>(
     name: String,
     phone: String,
     email: String,
-
     passName: String,
     phase: Number,
     price: Number,
-
     paymentId: String,
     orderId: String,
     qrCode: String,
-
     status: {
       type: String,
       enum: ["PENDING", "PAID", "FAILED"],
       default: "PENDING",
     },
-
-    checkedIn: {
-      type: Boolean,
-      default: false,
-    },
+    checkedIn: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

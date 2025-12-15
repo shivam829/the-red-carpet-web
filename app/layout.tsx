@@ -1,4 +1,7 @@
 import "./globals.css";
+import "./globals.css";
+import { ReactNode } from "react";
+
 
 export const metadata = {
   title: "THE RED CARPET | New Year Eve 2025 | Bhopal",

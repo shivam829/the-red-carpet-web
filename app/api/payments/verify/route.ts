@@ -15,7 +15,18 @@ export async function POST(req: Request) {
       bookingId,
     } = await req.json();
 
-    /* 1️⃣ VERIFY SIGNATURE */
+    if (
+      !razorpay_payment_id ||
+      !razorpay_order_id ||
+      !razorpay_signature ||
+      !bookingId
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Missing fields" },
+        { status: 400 }
+      );
+    }
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
     const expectedSignature = crypto
@@ -30,12 +41,9 @@ export async function POST(req: Request) {
       );
     }
 
-    /* 2️⃣ CONNECT DB & FETCH BOOKING */
     await connectDB();
 
-    const booking = await Booking.findById(bookingId).exec();
-
-
+    const booking = await Booking.findById(bookingId);
     if (!booking) {
       return NextResponse.json(
         { success: false, message: "Booking not found" },
@@ -43,40 +51,34 @@ export async function POST(req: Request) {
       );
     }
 
-    /* 3️⃣ GENERATE QR CODE */
     const qrCode = await generateQR(
       JSON.stringify({
-        bookingId: booking._id,
+        bookingId: booking._id.toString(),
         paymentId: razorpay_payment_id,
       })
     );
 
-    /* 4️⃣ UPDATE BOOKING */
     booking.status = "PAID";
     booking.paymentId = razorpay_payment_id;
     booking.orderId = razorpay_order_id;
     booking.qrCode = qrCode;
-
     await booking.save();
 
-    /* 5️⃣ SEND EMAIL */
     await sendEmail(
       booking.email,
       "🎟 Your Red Carpet Ticket",
       ticketEmailTemplate({
         name: booking.name,
         passName: booking.passName,
-        qrCode: qrCode,
+        qrCode,
       })
     );
 
-    /* 6️⃣ SUCCESS */
     return NextResponse.json({ success: true });
-
   } catch (error) {
-    console.error("Verify payment error:", error);
+    console.error("VERIFY PAYMENT ERROR:", error);
     return NextResponse.json(
-      { success: false, message: "Verification failed" },
+      { success: false, message: "Server error" },
       { status: 500 }
     );
   }

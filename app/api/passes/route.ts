@@ -4,11 +4,6 @@ import Pass from "@/models/Pass";
 
 export async function GET() {
   await connectDB();
-
-  const passes = await Pass.find({ visible: true } as any).sort({
-    phase: 1,
-    price: 1,
-  });
-
+  const passes = await Pass.find({ visible: true }).exec();
   return NextResponse.json(passes);
 }

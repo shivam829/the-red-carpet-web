@@ -1,52 +1,56 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import loadRazorpay from "@/lib/loadRazorpay";
 
-type PassType = {
-  _id: string;
-  name: string;
-  price: number;
-  phase: number;
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+const loadRazorpay = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && (window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 };
 
+
 export default function Passes() {
-  const [passes, setPasses] = useState<PassType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [passes, setPasses] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("/api/passes")
       .then((res) => res.json())
-      .then((data) => {
-        setPasses(data);
-        setLoading(false);
-      });
+      .then(setPasses);
   }, []);
 
-  async function handlePayment(pass: PassType) {
+  const bookPass = async (pass: any) => {
     console.log("👉 Book Now clicked", pass);
 
-    const razorpayLoaded = await loadRazorpay();
-    if (!razorpayLoaded) {
-      alert("Razorpay SDK failed to load");
-      return;
-    }
-
-    // 1️⃣ Create booking
+    // 1️⃣ Create booking in DB
     const bookingRes = await fetch("/api/bookings/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: "Test User",
-        phone: "9999999999",
-        email: "test@example.com",
-        passName: pass.name,
-        phase: pass.phase,
-        price: pass.price,
+        passId: pass._id,
       }),
     });
 
-    const booking = await bookingRes.json();
+    if (!bookingRes.ok) {
+      alert("Failed to create booking");
+      return;
+    }
+
+    const bookingData = await bookingRes.json();
+    const bookingId = bookingData._id; // ✅ CORRECTLY DEFINED
 
     // 2️⃣ Create Razorpay order
     const orderRes = await fetch("/api/payments/order", {
@@ -54,82 +58,89 @@ export default function Passes() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         amount: pass.price,
-        bookingId: booking._id,
+        bookingId,
       }),
     });
 
-    const order = await orderRes.json();
+    if (!orderRes.ok) {
+      alert("Failed to create payment order");
+      return;
+    }
 
-    // 3️⃣ Open Razorpay Checkout
-    
-console.log("🧾 Razorpay Order ID:", order.id);
+    const orderData = await orderRes.json();
+    console.log("🧾 Razorpay Order ID:", orderData.id);
+
+    // 3️⃣ Open Razorpay
     const options = {
-  key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-  order_id: order.id,              // 🔴 MUST EXIST
-  amount: order.amount,            // already in paise
-  currency: "INR",
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      amount: orderData.amount,
+      currency: "INR",
+      name: "THE RED CARPET",
+      description: pass.name,
+      order_id: orderData.id,
 
-  name: "The Red Carpet",
-  description: `${pass.name} – Phase ${pass.phase}`,
+      handler: async function (response: any) {
+        try {
+          const verifyRes = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              bookingId: bookingId, // ✅ NOW VALID
+            }),
+          });
 
-  handler: async function (response: any) {
-  const verifyRes = await fetch("/api/payments/verify", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      razorpay_payment_id: response.razorpay_payment_id,
-      razorpay_order_id: response.razorpay_order_id,
-      razorpay_signature: response.razorpay_signature,
-      bookingId: order.receipt,
-    }),
-  });
+          const data = await verifyRes.json();
 
-  const result = await verifyRes.json();
+          if (!verifyRes.ok || !data.success) {
+            alert("Payment verification failed");
+            return;
+          }
 
-  if (result.success) {
-    alert("Payment verified! Ticket confirmed 🎉");
-  } else {
-    alert("Payment verification failed");
-  }
+          // 🎟 Redirect to ticket page
+          window.location.href = `/ticket/${bookingId}`;
+        } catch (err) {
+          console.error(err);
+          alert("Payment verification failed");
+        }
+      },
+
+      theme: {
+        color: "#b8964b",
+      },
+    };
+
+    const res = await loadRazorpay();
+
+if (!res) {
+  alert("Razorpay SDK failed to load. Check your internet.");
+  return;
 }
-,
 
-  prefill: {
-    name: "Test User",
-    email: "test@example.com",
-    contact: "9999999999",
-  },
+const rzp = new (window as any).Razorpay(options);
+rzp.open();
 
-  theme: {
-    color: "#b89b5e",
-  },
-};
-
-    // @ts-ignore
-    const paymentObject = new window.Razorpay(options);
-    paymentObject.open();
-  }
-
-  if (loading) return <p className="text-white">Loading passes…</p>;
+  };
 
   return (
-    <section id="passes" className="py-24 px-6">
-      <h2 className="text-4xl text-gold font-bold text-center mb-12">
-        Passes
+    <section id="passes" className="py-24 px-6 bg-black text-white">
+      <h2 className="text-4xl font-bold text-gold text-center mb-12">
+        Entry Passes
       </h2>
 
       <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
         {passes.map((pass) => (
           <div
             key={pass._id}
-            className="p-6 bg-black/60 border border-gold/30 rounded-xl text-center"
+            className="border border-gold/30 rounded-xl p-6 text-center bg-black/40"
           >
-            <h3 className="text-2xl text-gold mb-4">{pass.name}</h3>
-            <p className="mb-2">Phase {pass.phase}</p>
-            <p className="mb-6 text-xl">₹{pass.price}</p>
+            <h3 className="text-2xl mb-2">{pass.name}</h3>
+            <p className="text-xl mb-4">₹{pass.price}</p>
 
             <button
-              onClick={() => handlePayment(pass)}
+              onClick={() => bookPass(pass)}
               className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition"
             >
               Book Now
