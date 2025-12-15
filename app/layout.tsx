@@ -27,6 +27,8 @@ export default function RootLayout({
             backgroundRepeat: "no-repeat"
           }}
         />
+        
+
 
         {/* LIGHT OVERLAY (DOES NOT HIDE IMAGE) */}
         <div
@@ -35,6 +37,7 @@ export default function RootLayout({
             backgroundColor: "rgba(0,0,0,0.35)"
           }}
         />
+        
 
         {children}
       </body>
