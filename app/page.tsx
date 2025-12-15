@@ -1,19 +1,45 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Passes from "@/components/Passes";
 import VVIP from "@/components/VVIP";
 import LayoutMap from "@/components/LayoutMap";
 
+type PassType = {
+  price: number;
+  phase: number;
+};
+
 export default function HomePage() {
+  const [bookingStatus, setBookingStatus] = useState<string>(
+    "Booking Opens Soon"
+  );
+
+  useEffect(() => {
+    fetch("/api/passes")
+      .then((res) => res.json())
+      .then((passes: PassType[]) => {
+        if (passes && passes.length > 0) {
+          const lowest = passes[0];
+          setBookingStatus(
+            `Phase ${lowest.phase} Live · Starting at ₹${lowest.price}`
+          );
+        }
+      })
+      .catch(() => {
+        setBookingStatus("Booking Opens Soon");
+      });
+  }, []);
+
   return (
     <main>
-
       {/* HERO SECTION */}
       <section className="min-h-screen flex flex-col items-center justify-start text-center px-6 pt-48">
-
         {/* LOGO */}
         <img
           src="/logo.png"
           alt="The Red Carpet Logo"
-          className="w-52 md:w-64 mb-4"
+          className="w-52 md:w-64 mb-6"
         />
 
         {/* TITLE */}
@@ -27,18 +53,22 @@ export default function HomePage() {
         </p>
 
         {/* DATE & VENUE */}
-        <p className="text-gray-300 mb-8">
+        <p className="text-gray-300 mb-4">
           31st December 2025 · Amber by Sayaji, Bhopal
         </p>
 
-        {/* CTA */}
-       <a
-  href="#passes"
-  className="px-10 py-4 bg-redcarpet rounded-xl text-lg hover:bg-gold hover:text-black transition inline-block"
->
-  Reserve Your Entry
-</a>
+        {/* PHASE + PRICE STATUS */}
+        <p className="text-gold text-lg md:text-xl font-semibold mb-8">
+          {bookingStatus}
+        </p>
 
+        {/* CTA */}
+        <a
+          href="#passes"
+          className="px-10 py-4 bg-redcarpet rounded-xl text-lg hover:bg-gold hover:text-black transition inline-block"
+        >
+          Reserve Your Entry
+        </a>
       </section>
 
       {/* EXPERIENCE SECTION */}
@@ -54,7 +84,7 @@ export default function HomePage() {
             "Live DJs & Band Performances",
             "Arabic Mask Dance",
             "Fire Jugglers & Fire Stunts",
-            "Midnight Countdown Celebration"
+            "Midnight Countdown Celebration",
           ].map((item) => (
             <div
               key={item}
@@ -83,7 +113,6 @@ export default function HomePage() {
           © 2025 THE RED CARPET. All rights reserved.
         </p>
       </footer>
-
     </main>
   );
 }
