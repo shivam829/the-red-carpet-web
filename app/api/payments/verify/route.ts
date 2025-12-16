@@ -1,18 +1,20 @@
 export const dynamic = "force-dynamic";
 
-
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import dbConnect from "@/lib/db";
-import Booking from "@/models/Booking";
+import BookingModel from "@/models/Booking";
 import QRCode from "qrcode";
-import { sendEmail } from "@/lib/sendEmail";
-import sendWhatsApp from "@/lib/sendWhatsApp";
 import { generateTicketPDF } from "@/lib/generateTicketPDF";
+// NOTE: sendEmail & sendWhatsApp are intentionally NOT used
+// because env variables are not configured yet
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
+
+    // Avoid Mongoose + TS overload issues
+    const Booking = BookingModel as any;
 
     const {
       bookingId,
@@ -20,6 +22,8 @@ export async function POST(req: Request) {
       razorpay_order_id,
       razorpay_signature,
     } = await req.json();
+
+    /* ------------------ BASIC VALIDATION ------------------ */
 
     if (
       !bookingId ||
@@ -33,7 +37,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Verify Razorpay signature
+    /* ------------------ VERIFY RAZORPAY SIGNATURE ------------------ */
+
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
 
     const expectedSignature = crypto
@@ -43,13 +48,14 @@ export async function POST(req: Request) {
 
     if (expectedSignature !== razorpay_signature) {
       return NextResponse.json(
-        { success: false, message: "Invalid signature" },
+        { success: false, message: "Invalid payment signature" },
         { status: 400 }
       );
     }
 
-    // ✅ Fetch booking (correct usage)
-    const booking = await Booking.findOne(bookingId);
+    /* ------------------ FETCH BOOKING ------------------ */
+
+    const booking = await Booking.findById(bookingId);
     if (!booking) {
       return NextResponse.json(
         { success: false, message: "Booking not found" },
@@ -57,7 +63,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Generate QR payload
+    /* ------------------ GENERATE QR CODE ------------------ */
+
     const qrPayload = JSON.stringify({
       bookingId: booking._id.toString(),
       reference: booking.reference,
@@ -65,51 +72,43 @@ export async function POST(req: Request) {
 
     const qrCode = await QRCode.toDataURL(qrPayload);
 
-    // ✅ Update booking
+    /* ------------------ MARK BOOKING AS PAID ------------------ */
+
     booking.status = "PAID";
     booking.paymentId = razorpay_payment_id;
     booking.qrCode = qrCode;
+
     await booking.save();
 
-    // ✅ Generate PDF ticket
-    const pdfBuffer = await generateTicketPDF({
-      name: booking.name,
-      passName: booking.passName,
-      quantity: booking.quantity,
-      amount: booking.amount,
-      reference: booking.reference,
+    /* ------------------ OPTIONAL: PDF GENERATION (NO EMAIL SEND) ------------------ */
+    // This is safe to keep for future use / testing
+    try {
+      await generateTicketPDF({
+        name: booking.name,
+        passName: booking.passName,
+        quantity: booking.quantity,
+        amount: booking.amount,
+        reference: booking.reference,
+      });
+    } catch (err) {
+      console.error("PDF GENERATION FAILED (IGNORED):", err);
+      // ❗ Do NOT fail payment
+    }
+
+    /* ------------------ FINAL RESPONSE ------------------ */
+
+    return NextResponse.json({
+      success: true,
+      message: "Payment verified and booking confirmed",
     });
+  } catch (err: any) {
+    console.error("VERIFY ROUTE FAILED:", err);
 
-    // ✅ Send email
-    await sendEmail(
-      booking.email,
-      "🎟 Your Red Carpet NYE Ticket",
-      `
-        <h2>Thank you for booking, ${booking.name}! 🥂</h2>
-        <p>Your New Year’s Eve pass is confirmed.</p>
-        <p><b>Reference:</b> ${booking.reference}</p>
-        <p>Please find your ticket attached.</p>
-        <p>✨ See you on the red carpet ✨</p>
-      `,
-      pdfBuffer
-    );
-
-    // ✅ Send WhatsApp (TYPE-SAFE)
-    await sendWhatsApp({
-      phone: booking.phone,
-      message: `🎟 Your Red Carpet Ticket Confirmed!
-
-Name: ${booking.name}
-Reference: ${booking.reference}
-
-See you at the event ✨`,
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("VERIFY ERROR:", err);
     return NextResponse.json(
-      { success: false, message: "Payment verification failed" },
+      {
+        success: false,
+        message: err?.message || "Payment verification failed",
+      },
       { status: 500 }
     );
   }
