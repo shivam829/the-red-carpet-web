@@ -2,33 +2,31 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import dbConnect from "@/lib/db";
 import Booking from "@/models/Booking";
+import QRCode from "qrcode";
+import { sendEmail } from "@/lib/sendEmail";
+import sendWhatsApp from "@/lib/sendWhatsApp";
+import { generateTicketPDF } from "@/lib/generateTicketPDF";
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
 
     const {
+      bookingId,
       razorpay_payment_id,
       razorpay_order_id,
       razorpay_signature,
-      bookingId,
     } = await req.json();
 
-    // ✅ Validate input
-    if (
-      !razorpay_payment_id ||
-      !razorpay_order_id ||
-      !razorpay_signature ||
-      !bookingId
-    ) {
+    if (!bookingId || !razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
       return NextResponse.json(
-        { success: false, error: "Missing fields" },
+        { success: false, message: "Missing payment fields" },
         { status: 400 }
       );
     }
 
-    // ✅ Generate expected signature
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    // ✅ Verify Razorpay Signature
+    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
 
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
@@ -37,26 +35,69 @@ export async function POST(req: Request) {
 
     if (expectedSignature !== razorpay_signature) {
       return NextResponse.json(
-        { success: false, error: "Invalid signature" },
+        { success: false, message: "Invalid signature" },
         { status: 400 }
       );
     }
 
-    // ✅ Update booking
-    await Booking.findByIdAndUpdate(
-      bookingId as any,
-      {
-        status: "PAID",
-        razorpayPaymentId: razorpay_payment_id,
-      },
-      { new: true }
+    // ✅ Fetch booking correctly
+    const booking = await Booking.findOne(bookingId);
+    if (!booking) {
+      return NextResponse.json(
+        { success: false, message: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
+    // ✅ Generate QR Code (payload = reference)
+    const qrPayload = JSON.stringify({
+      bookingId: booking._id.toString(),
+      reference: booking.reference,
+    });
+
+    const qrCode = await QRCode.toDataURL(qrPayload);
+
+    // ✅ Mark booking as PAID
+    booking.status = "PAID";
+    booking.paymentId = razorpay_payment_id;
+    booking.qrCode = qrCode;
+    await booking.save();
+
+    // ✅ Generate PDF Ticket
+    const pdfBuffer = await generateTicketPDF({
+      name: booking.name,
+      passName: booking.passName,
+      quantity: booking.quantity,
+      amount: booking.amount,
+      reference: booking.reference,
+    });
+
+    // ✅ Send Email with PDF
+    await sendEmail(
+      booking.email,
+      "🎟 Your Red Carpet NYE Ticket",
+      `
+        <h2>Thank you for booking, ${booking.name}! 🥂</h2>
+        <p>Your New Year’s Eve pass is confirmed.</p>
+        <p><b>Reference:</b> ${booking.reference}</p>
+        <p>Please find your ticket attached.</p>
+        <p>✨ See you on the red carpet ✨</p>
+      `,
+      pdfBuffer
     );
+
+    // ✅ Send WhatsApp (mock / real)
+    await sendWhatsApp({
+      phone: booking.phone,
+      name: booking.name,
+      reference: booking.reference,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("VERIFY ERROR:", err);
     return NextResponse.json(
-      { success: false, error: "Verification failed" },
+      { success: false, message: "Payment verification failed" },
       { status: 500 }
     );
   }

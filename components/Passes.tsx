@@ -13,6 +13,7 @@ export default function Passes() {
   const [passes, setPasses] = useState<any[]>([]);
   const [selectedPass, setSelectedPass] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [successBookingId, setSuccessBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/passes")
@@ -25,7 +26,7 @@ export default function Passes() {
     try {
       setLoading(true);
 
-      // 1️⃣ Create order + booking
+      // 1️⃣ Create booking + Razorpay order
       const res = await fetch("/api/payments/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,7 +39,6 @@ export default function Passes() {
         }),
       });
 
-      // ✅ CRITICAL: handle non-200 safely
       if (!res.ok) {
         const text = await res.text();
         console.error("ORDER API ERROR:", text);
@@ -48,25 +48,22 @@ export default function Passes() {
 
       const data = await res.json();
 
-      // 2️⃣ Ensure Razorpay is loaded
       if (!window.Razorpay) {
-        alert("Payment SDK not loaded. Refresh and try again.");
+        alert("Payment SDK not loaded. Please refresh.");
         return;
       }
 
+      // 2️⃣ Razorpay checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-        amount: data.amount,
+        amount: data.amount, // already in paise
         currency: "INR",
         name: "The Red Carpet",
         description: pass.name,
         order_id: data.orderId,
 
-        // 3️⃣ PAYMENT SUCCESS HANDLER (SAFE)
         handler: async function (response: any) {
           try {
-            console.log("✅ Payment success", response);
-
             const verifyRes = await fetch("/api/payments/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -78,16 +75,18 @@ export default function Passes() {
               }),
             });
 
-            const verifyData = await verifyRes.json();
+            const verify = await verifyRes.json();
 
-            if (verifyData.success) {
+            if (verify.success) {
+              // ✅ SUCCESS PATH
+              setSuccessBookingId(data.bookingId);
               window.location.href = `/ticket/${data.bookingId}`;
             } else {
-              alert("Payment done, but verification failed");
+              alert("Payment completed but verification failed");
             }
           } catch (err) {
-            console.error("VERIFY HANDLER ERROR:", err);
-            alert("Payment done, but verification error");
+            console.error("VERIFY ERROR:", err);
+            alert("Payment verification error");
           }
         },
 
