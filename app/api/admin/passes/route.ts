@@ -1,9 +1,16 @@
-import { connectDB } from "@/lib/db";
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
 import Pass from "@/models/Pass";
 
 export async function GET() {
-  await connectDB(); // ✅ only runs at request time
+  try {
+    await dbConnect();
 
-  const passes = await Pass.find();
-  return Response.json(passes);
+    const passes = await Pass.find({ visible: true }).lean();
+
+    return NextResponse.json(passes);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json([], { status: 500 });
+  }
 }

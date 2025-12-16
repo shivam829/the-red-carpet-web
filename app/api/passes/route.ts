@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
+import dbConnect from "@/lib/db";
+
 import Pass from "@/models/Pass";
 
 export async function GET() {
-  await connectDB();
+  await dbConnect();
+
   const passes = await Pass.find({ visible: true }).exec();
   return NextResponse.json(passes);
 }

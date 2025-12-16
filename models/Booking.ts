@@ -1,30 +1,17 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-export interface BookingDocument extends Document {
-  name: string;
-  phone: string;
-  email: string;
-  passName: string;
-  phase: number;
-  price: number;
-  paymentId?: string;
-  orderId?: string;
-  qrCode?: string;
-  status: "PENDING" | "PAID" | "FAILED";
-  checkedIn: boolean;
-}
-
-const BookingSchema = new Schema<BookingDocument>(
+const BookingSchema = new Schema(
   {
+    pass: { type: Schema.Types.ObjectId, ref: "Pass" },
     name: String,
-    phone: String,
     email: String,
-    passName: String,
-    phase: Number,
-    price: Number,
-    paymentId: String,
-    orderId: String,
-    qrCode: String,
+    phone: String,
+    quantity: Number,
+    amount: Number,
+    reference: String,
+    qrData: String,
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
     status: {
       type: String,
       enum: ["PENDING", "PAID", "FAILED"],
@@ -35,8 +22,5 @@ const BookingSchema = new Schema<BookingDocument>(
   { timestamps: true }
 );
 
-const Booking: Model<BookingDocument> =
-  mongoose.models.Booking ||
-  mongoose.model<BookingDocument>("Booking", BookingSchema);
-
-export default Booking;
+export default mongoose.models.Booking ||
+  mongoose.model("Booking", BookingSchema);

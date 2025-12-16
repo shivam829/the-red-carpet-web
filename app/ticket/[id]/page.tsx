@@ -1,50 +1,82 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import html2canvas from "html2canvas";
 
-export default function TicketPage({ params }: any) {
+export default function TicketPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const [ticket, setTicket] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/bookings/${params.id}`)
-      .then(res => res.json())
-      .then(setTicket);
-  }, []);
+    fetch(`/api/ticket/${params.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTicket(data);
+        setLoading(false);
+      });
+  }, [params.id]);
 
-  if (!ticket) return <p className="text-center mt-20">Loading ticket...</p>;
+  const downloadTicket = async () => {
+    const node = document.getElementById("ticket");
+    if (!node) return;
+
+    const canvas = await html2canvas(node);
+    const link = document.createElement("a");
+    link.download = "red-carpet-ticket.png";
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Loading ticket...
+      </div>
+    );
+  }
+
+  if (!ticket || ticket.error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Invalid or unpaid ticket
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-      <div className="bg-black border border-gold/30 rounded-xl p-8 max-w-md w-full text-center">
-        <h1 className="text-3xl text-gold mb-4">🎟 THE RED CARPET</h1>
+    <div className="min-h-screen bg-black flex items-center justify-center p-6">
+      <div
+        id="ticket"
+        className="bg-white text-black rounded-xl p-6 w-full max-w-md"
+      >
+        <h1 className="text-2xl font-bold text-center mb-4">
+          🎟 The Red Carpet
+        </h1>
 
-        <img src={ticket.qrCode} className="mx-auto w-48 mb-4" />
+        <p><b>Name:</b> {ticket.name}</p>
+        <p><b>Pass:</b> {ticket.passName}</p>
+        <p><b>Quantity:</b> {ticket.quantity}</p>
+        <p><b>Total Paid:</b> ₹{ticket.amount}</p>
 
-        <p className="mb-1">{ticket.name}</p>
-        <p className="mb-1">{ticket.passName}</p>
-        <p className="mb-4">31st Dec 2025 · Bhopal</p>
+        <p className="mt-2">
+          <b>Reference:</b>{" "}
+          <span className="font-mono">{ticket.reference}</span>
+        </p>
+
+        <div className="flex justify-center mt-4">
+          <img src={ticket.qrCode} alt="QR Code" />
+        </div>
 
         <button
-          onClick={() => window.print()}
-          className="w-full py-3 bg-gold text-black rounded-lg mb-3"
+          onClick={downloadTicket}
+          className="mt-6 w-full py-3 bg-black text-white rounded-lg"
         >
           Download Ticket
         </button>
-
-        {navigator.share && (
-          <button
-            onClick={() =>
-              navigator.share({
-                title: "My Red Carpet Ticket",
-                text: "Here is my entry ticket 🎟",
-                url: window.location.href,
-              })
-            }
-            className="w-full py-3 bg-redcarpet rounded-lg"
-          >
-            Share Ticket
-          </button>
-        )}
       </div>
     </div>
   );
