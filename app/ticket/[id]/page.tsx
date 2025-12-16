@@ -27,6 +27,16 @@ export default function TicketSuccess({ params }: { params: { id: string } }) {
         <p className="mb-2">
           <b>Reference:</b> {ticket.reference}
         </p>
+           <button
+  onClick={() => (window.location.href = "/")}
+  className="mt-3 w-full py-2 bg-gold text-black rounded-lg"
+>
+  Back to Home
+</button>
+
+<p className="mt-4 text-center text-sm">
+  Thanks for booking 🎉 New Year’s Eve awaits you ✨
+</p>
 
         <a
           href={`/api/ticket/${params.id}/download`}

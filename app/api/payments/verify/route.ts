@@ -18,14 +18,19 @@ export async function POST(req: Request) {
       razorpay_signature,
     } = await req.json();
 
-    if (!bookingId || !razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+    if (
+      !bookingId ||
+      !razorpay_payment_id ||
+      !razorpay_order_id ||
+      !razorpay_signature
+    ) {
       return NextResponse.json(
         { success: false, message: "Missing payment fields" },
         { status: 400 }
       );
     }
 
-    // ✅ Verify Razorpay Signature
+    // ✅ Verify Razorpay signature
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
 
     const expectedSignature = crypto
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Fetch booking correctly
+    // ✅ Fetch booking (correct usage)
     const booking = await Booking.findOne(bookingId);
     if (!booking) {
       return NextResponse.json(
@@ -49,7 +54,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Generate QR Code (payload = reference)
+    // ✅ Generate QR payload
     const qrPayload = JSON.stringify({
       bookingId: booking._id.toString(),
       reference: booking.reference,
@@ -57,13 +62,13 @@ export async function POST(req: Request) {
 
     const qrCode = await QRCode.toDataURL(qrPayload);
 
-    // ✅ Mark booking as PAID
+    // ✅ Update booking
     booking.status = "PAID";
     booking.paymentId = razorpay_payment_id;
     booking.qrCode = qrCode;
     await booking.save();
 
-    // ✅ Generate PDF Ticket
+    // ✅ Generate PDF ticket
     const pdfBuffer = await generateTicketPDF({
       name: booking.name,
       passName: booking.passName,
@@ -72,7 +77,7 @@ export async function POST(req: Request) {
       reference: booking.reference,
     });
 
-    // ✅ Send Email with PDF
+    // ✅ Send email
     await sendEmail(
       booking.email,
       "🎟 Your Red Carpet NYE Ticket",
@@ -86,11 +91,15 @@ export async function POST(req: Request) {
       pdfBuffer
     );
 
-    // ✅ Send WhatsApp (mock / real)
+    // ✅ Send WhatsApp (TYPE-SAFE)
     await sendWhatsApp({
       phone: booking.phone,
-      name: booking.name,
-      reference: booking.reference,
+      message: `🎟 Your Red Carpet Ticket Confirmed!
+
+Name: ${booking.name}
+Reference: ${booking.reference}
+
+See you at the event ✨`,
     });
 
     return NextResponse.json({ success: true });

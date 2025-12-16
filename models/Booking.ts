@@ -18,6 +18,7 @@ const BookingSchema = new Schema(
       default: "PENDING",
     },
     checkedIn: { type: Boolean, default: false },
+    checkedInAt: { type: Date },
   },
   { timestamps: true }
 );

@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
-import  connectDB  from "@/lib/db";
+import connectDB from "@/lib/db";
 import Booking from "@/models/Booking";
 
-export async function POST(req: Request) {
-  const body = await req.json();
+export async function GET() {
   await connectDB();
 
-  const booking = await Booking.create({
-    name: body.name,
-    phone: body.phone,
-    email: body.email,
-    passName: body.passName,
-    phase: body.phase,
-    price: body.price,
-  });
+  const bookings = await Booking.find()
+  .where("status").equals("PAID")
+  .sort({ createdAt: -1 })
+  .lean();
 
-  return NextResponse.json(booking);
+
+  return NextResponse.json(bookings);
 }

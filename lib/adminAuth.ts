@@ -1,35 +1,9 @@
-import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 
-const ADMINS = [
-  {
-    email: process.env.ADMIN_EMAIL_1,
-    password: process.env.ADMIN_PASSWORD_1
-  },
-  {
-    email: process.env.ADMIN_EMAIL_2,
-    password: process.env.ADMIN_PASSWORD_2
-  }
-];
+export function verifyAdmin(req: Request) {
+  const auth = req.headers.get("authorization");
+  if (!auth) throw new Error("Unauthorized");
 
-export function authenticateAdmin(email: string, password: string) {
-  return ADMINS.find(
-    (a) => a.email === email && a.password === password
-  );
-}
-
-export function setAdminSession(email: string) {
-  cookies().set("admin_session", email, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    path: "/"
-  });
-}
-
-export function getAdminSession() {
-  return cookies().get("admin_session")?.value;
-}
-
-export function clearAdminSession() {
-  cookies().delete("admin_session");
+  const token = auth.replace("Bearer ", "");
+  jwt.verify(token, process.env.JWT_SECRET!);
 }

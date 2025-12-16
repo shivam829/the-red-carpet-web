@@ -1,26 +1,18 @@
 import { NextResponse } from "next/server";
-import { authenticateAdmin, setAdminSession } from "@/lib/adminAuth";
+import jwt from "jsonwebtoken";
 
-export async function POST(request: Request) {
-  try {
-    const { email, password } = await request.json();
+export async function POST(req: Request) {
+  const { secret } = await req.json();
 
-    const admin = authenticateAdmin(email, password);
-
-    if (!admin) {
-      return NextResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
-      );
-    }
-
-    setAdminSession(email);
-
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json(
-      { error: "Bad request" },
-      { status: 400 }
-    );
+  if (secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: "Invalid secret" }, { status: 401 });
   }
+
+  const token = jwt.sign(
+    { role: "admin" },
+    process.env.JWT_SECRET!,
+    { expiresIn: "12h" }
+  );
+
+  return NextResponse.json({ token });
 }

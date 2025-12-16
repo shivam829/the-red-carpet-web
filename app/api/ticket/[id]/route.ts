@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import Booking from "@/models/Booking";
+import BookingModel from "@/models/Booking";
 
 export async function GET(
   req: Request,
@@ -9,10 +9,10 @@ export async function GET(
   try {
     await dbConnect();
 
-    const booking = await Booking.findOne({
-  _id: params.id,
-});
+    // ✅ Cast model to avoid TS union overload issue
+    const Booking = BookingModel as any;
 
+    const booking = await Booking.findById(params.id);
 
     if (!booking) {
       return NextResponse.json(
