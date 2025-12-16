@@ -21,7 +21,7 @@ export async function GET(
       );
     }
 
-    // Ensure QR exists (fallback for old bookings)
+    // Fallback QR generation (for older bookings)
     if (!booking.qrCode) {
       booking.qrCode = await QRCode.toDataURL(
         JSON.stringify({
