@@ -16,55 +16,54 @@ export async function POST(req: Request) {
 
     const { passId, name, email, phone, quantity } = await req.json();
 
+    // ✅ 1. Validation
     if (!passId || !name || !email || !phone || !quantity) {
       return NextResponse.json(
-        { error: "Missing fields" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const pass = await Pass.findOne({ _id: passId });
-
+    // ✅ 2. Get pass
+    const pass = await Pass.findOne({ _id: passId } as any);
     if (!pass) {
-      return NextResponse.json(
-        { error: "Pass not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Pass not found" }, { status: 404 });
     }
 
-    const amount = pass.price * quantity;
+    const totalAmount = pass.price * quantity;
 
+    // ✅ 3. Create booking
     const booking = await Booking.create({
-      pass: pass._id,
+      passId: pass._id,
       name,
       email,
       phone,
       quantity,
-      amount,
-      reference: crypto.randomBytes(6).toString("hex").toUpperCase(),
+      amount: totalAmount,
       status: "PENDING",
-      qrData: "",
+      reference: crypto.randomBytes(6).toString("hex").toUpperCase(),
     });
 
+    // ✅ 4. Create Razorpay order
     const order = await razorpay.orders.create({
-      amount: amount * 100,
+      amount: totalAmount * 100, // paise
       currency: "INR",
       receipt: booking._id.toString(),
     });
 
     booking.razorpayOrderId = order.id;
-    booking.qrData = booking.reference;
     await booking.save();
 
     return NextResponse.json({
       orderId: order.id,
       amount: order.amount,
       bookingId: booking._id,
+      currency: "INR",
     });
   } catch (err) {
     console.error("ORDER ERROR:", err);
     return NextResponse.json(
-      { error: "Order failed" },
+      { error: "Failed to create order" },
       { status: 500 }
     );
   }

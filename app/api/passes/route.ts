@@ -6,6 +6,6 @@ import Pass from "@/models/Pass";
 export async function GET() {
   await dbConnect();
 
-  const passes = await Pass.find({ visible: true }).exec();
+  const passes = await Pass.find().where("visible").equals(true).exec();
   return NextResponse.json(passes);
 }

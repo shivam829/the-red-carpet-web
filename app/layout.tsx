@@ -28,6 +28,10 @@ export default function RootLayout({
           }}
         />
         
+           <script
+  src="https://checkout.razorpay.com/v1/checkout.js"
+  async
+></script>
 
 
         {/* LIGHT OVERLAY (DOES NOT HIDE IMAGE) */}

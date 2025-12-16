@@ -6,7 +6,7 @@ export async function GET() {
   try {
     await dbConnect();
 
-    const passes = await Pass.find({ visible: true }).lean();
+    const passes = Pass.find().where("visible").equals(true).lean();
 
     return NextResponse.json(passes);
   } catch (e) {

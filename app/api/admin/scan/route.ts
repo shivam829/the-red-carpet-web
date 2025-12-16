@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     await dbConnect();
 
 
-    const booking = await Booking.findById(bookingId).exec();
+    const booking = await Booking.findOne(bookingId).exec();
 
     if (!booking) {
       return NextResponse.json(

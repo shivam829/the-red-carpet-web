@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Booking from "@/models/Booking";
-import QRCode from "qrcode";
 
 export async function GET(
   req: Request,
@@ -10,29 +9,24 @@ export async function GET(
   try {
     await dbConnect();
 
-    const booking = await Booking.findOne({ _id: params.id })
-      .populate("pass")
-      .lean();
+    const booking = await Booking.findOne({
+  _id: params.id,
+});
 
-    if (!booking || booking.status !== "PAID") {
+
+    if (!booking) {
       return NextResponse.json(
-        { error: "Invalid or unpaid ticket" },
+        { error: "Booking not found" },
         { status: 404 }
       );
     }
 
-    const qrCode = await QRCode.toDataURL(booking.qrData);
-
-    return NextResponse.json({
-      name: booking.name,
-      passName: booking.pass.name,
-      quantity: booking.quantity,
-      amount: booking.amount,
-      reference: booking.reference,
-      qrCode,
-    });
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(booking);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to fetch booking" },
+      { status: 500 }
+    );
   }
 }
