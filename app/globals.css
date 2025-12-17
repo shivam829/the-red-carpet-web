@@ -10,3 +10,26 @@ html {
   scroll-behavior: smooth;
 }
 
+@media print {
+  body {
+    background: #5a0f0f !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  .ticket-card {
+    background: linear-gradient(
+      135deg,
+      #3b0a0a,
+      #7a1212,
+      #b8860b
+    ) !important;
+    color: white !important;
+    border-radius: 20px !important;
+    padding: 24px !important;
+  }
+}

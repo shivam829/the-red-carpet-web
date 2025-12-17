@@ -1,20 +1,16 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
 export async function POST(req: Request) {
-  const { secret } = await req.json();
+  const { email, password } = await req.json();
 
-  if (secret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: "Invalid secret" }, { status: 401 });
+  if (
+    email === process.env.ADMIN_EMAIL &&
+    password === process.env.ADMIN_PASSWORD
+  ) {
+    const res = NextResponse.json({ success: true });
+    res.cookies.set("admin", "true");
+    return res;
   }
 
-  const token = jwt.sign(
-    { role: "admin" },
-    process.env.JWT_SECRET!,
-    { expiresIn: "12h" }
-  );
-
-  return NextResponse.json({ token });
+  return NextResponse.json({ success: false }, { status: 401 });
 }

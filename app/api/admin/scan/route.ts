@@ -1,65 +1,22 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Booking from "@/models/Booking";
-import { verifyAdmin } from "@/lib/adminAuth";
-
 
 export async function POST(req: Request) {
-  verifyAdmin(req);
+  await dbConnect();
+  const { bookingId } = await req.json();
 
-  try {
-    await dbConnect();
+  const booking = await Booking.findOne(bookingId);
 
-    const { bookingId } = await req.json();
+  if (!booking || booking.status !== "PAID")
+    return NextResponse.json({ message: "Invalid ticket" }, { status: 400 });
 
-    if (!bookingId) {
-      return NextResponse.json(
-        { message: "Invalid QR" },
-        { status: 400 }
-      );
-    }
+  if (booking.isUsed)
+    return NextResponse.json({ message: "Already scanned" }, { status: 409 });
 
-    const booking = await Booking.findOne(bookingId);
+  booking.isUsed = true;
+  booking.usedAt = new Date();
+  await booking.save();
 
-    if (!booking) {
-      return NextResponse.json(
-        { message: "Ticket not found" },
-        { status: 404 }
-      );
-    }
-
-    if (booking.status !== "PAID") {
-      return NextResponse.json(
-        { message: "Ticket not paid" },
-        { status: 400 }
-      );
-    }
-
-    if (booking.checkedIn) {
-      return NextResponse.json(
-        { message: "❌ Already used" },
-        { status: 400 }
-      );
-    }
-
-    // ✅ Mark entry
-    booking.checkedIn = true;
-    booking.checkedInAt = new Date();
-    await booking.save();
-
-    return NextResponse.json({
-      name: booking.name,
-      pass: booking.passName,
-      quantity: booking.quantity,
-      reference: booking.reference,
-    });
-  } catch (err) {
-    console.error("SCAN ERROR:", err);
-    return NextResponse.json(
-      { message: "Scan failed" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ message: "Entry Allowed", booking });
 }

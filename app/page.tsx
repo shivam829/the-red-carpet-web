@@ -86,7 +86,7 @@ export default function HomePage() {
             },
             {
               title: "Midnight Fireworks",
-              img: "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf",
+              img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7RichB_N8T-Fnhz6j3B6rqqx7LH_WUGNbYWOnTn-7ssQXAI4kaK8UzyFnWwQBBusvtwtduw&s",
             },
           ].map((item) => (
             <motion.div
