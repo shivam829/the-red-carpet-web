@@ -3,56 +3,67 @@
 
 import { useState, useEffect } from "react";
 import LoginModal from "./LoginModal";
-
+import axios from "axios";
 
 export default function Header() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<null | { name: string }>(null);
   const [showLogin, setShowLogin] = useState(false);
 
   const handleLoginClick = () => {
     setShowLogin(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
+  const handleLogout = async () => {
+    try {
+      await axios.post("/api/logout");
+      setUser(null);
+      setShowLogin(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleLoginSuccess = (userData: { name: string }) => {
+    setUser(userData);
+    setShowLogin(false);
   };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    // Fetch user info if logged in
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get("/api/user");
+        setUser(response.data);
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      }
+    };
+    fetchUser();
   }, []);
 
   return (
-    <header className="flex justify-between p-4 bg-black text-white">
-      <h1 className="text-xl font-bold text-gold">The Red Carpet</h1>
+    <header className="p-4 bg-gray-100 flex justify-between items-center">
+      <h1 className="text-xl font-bold">My App</h1>
       {user ? (
-        <div className="flex items-center space-x-4">
-          <span>Hello, {user.name}</span>
-          <button onClick={handleLogout} className="btn bg-gold p-2 rounded">
+        <div>
+          <span className="mr-4">Hello, {user.name}</span>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-3 py-1 rounded"
+          >
             Logout
           </button>
         </div>
       ) : (
         <button
           onClick={handleLoginClick}
-          className="btn bg-gold p-2 rounded"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
-          Login / Sign Up
+          Login
         </button>
       )}
-
       {showLogin && (
-        <LoginModal
-          onClose={() => setShowLogin(false)}
-          onSuccess={(userData) => {
-            localStorage.setItem("user", JSON.stringify(userData));
-            setUser(userData);
-            setShowLogin(false);
-          }}
-        />
+        <LoginModal onClose={() => setShowLogin(false)} onSuccess={handleLoginSuccess} />
       )}
     </header>
   );

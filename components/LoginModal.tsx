@@ -1,9 +1,13 @@
 // components/LoginModal.tsx
 "use client";
 
-export default function LoginModal({ onClose, onSuccess }) {
+interface LoginModalProps {
+  onClose: () => void;
+  onSuccess: (userData: { name: string }) => void;
+}
+
+export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
   const handleLogin = () => {
-    // Mock user data
     const userData = { name: "Test User" };
     onSuccess(userData);
   };
