@@ -9,7 +9,10 @@ export async function GET() {
   try {
     await dbConnect();
 
-    const passes = await Pass.find({ visible: true }).exec();
+    // ✅ SAFE QUERY (handles old docs without `visible`)
+    const passes = await Pass.find({
+      $or: [{ visible: true }, { visible: { $exists: false } }],
+    }).exec();
 
     /* ---------- AUTO INITIALISE COUNTS ---------- */
     for (const pass of passes) {
@@ -33,7 +36,7 @@ export async function GET() {
   } catch (err) {
     console.error("PASSES API ERROR:", err);
     return NextResponse.json(
-      { error: "Failed to load passes" },
+      { error: "Failed to fetch passes" },
       { status: 500 }
     );
   }
