@@ -13,20 +13,40 @@ export default function Passes() {
   const [passes, setPasses] = useState<any[]>([]);
   const [selectedPass, setSelectedPass] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [successBookingId, setSuccessBookingId] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
     fetch("/api/passes")
       .then((res) => res.json())
       .then(setPasses)
       .catch(() => setPasses([]));
+
+    // Check if user is logged in
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setUser(data.user);
+        }
+      })
+      .catch(() => setUser(null));
   }, []);
+
+  const handleBookNowClick = (pass: any) => {
+    if (!user) {
+      setShowAuthPrompt(true);
+      setTimeout(() => setShowAuthPrompt(false), 3000);
+      return;
+    }
+    setSelectedPass(pass);
+  };
 
   const startPayment = async (pass: any, form: any) => {
     try {
       setLoading(true);
 
-      // 1️⃣ Create booking + Razorpay order
+      // Create booking + Razorpay order
       const res = await fetch("/api/payments/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,10 +73,10 @@ export default function Passes() {
         return;
       }
 
-      // 2️⃣ Razorpay checkout
+      // Razorpay checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-        amount: data.amount, // already in paise
+        amount: data.amount,
         currency: "INR",
         name: "The Red Carpet",
         description: pass.name,
@@ -78,8 +98,6 @@ export default function Passes() {
             const verify = await verifyRes.json();
 
             if (verify.success) {
-              // ✅ SUCCESS PATH
-              setSuccessBookingId(data.bookingId);
               window.location.href = `/ticket/${data.bookingId}`;
             } else {
               alert("Payment completed but verification failed");
@@ -111,6 +129,12 @@ export default function Passes() {
           Passes
         </h2>
 
+        {showAuthPrompt && (
+          <div className="fixed top-24 right-4 bg-red-900 border border-red-500 text-white px-6 py-4 rounded-lg shadow-xl z-50 animate-pulse">
+            <p className="font-semibold">⚠️ Please Login or Sign Up to book passes!</p>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {passes.map((pass) => (
             <div
@@ -125,7 +149,7 @@ export default function Passes() {
 
               <button
                 disabled={loading}
-                onClick={() => setSelectedPass(pass)}
+                onClick={() => handleBookNowClick(pass)}
                 className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition disabled:opacity-50"
               >
                 {loading ? "Processing..." : "Book Now"}

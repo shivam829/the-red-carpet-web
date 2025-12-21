@@ -1,27 +1,49 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+
+export interface IBooking extends Document {
+  userId?: mongoose.Types.ObjectId;
+  passId: mongoose.Types.ObjectId;
+  passName: string;
+  name: string;
+  email: string;
+  phone: string;
+  quantity: number;
+  amount: number;
+  reference: string;
+  qrCode?: string;
+  razorpayOrderId?: string;
+  paymentId?: string;
+  status: "PENDING" | "PAID" | "FAILED";
+  isUsed: boolean;
+  usedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const BookingSchema = new Schema(
   {
-    pass: { type: Schema.Types.ObjectId, ref: "Pass" },
-    name: String,
-    email: String,
-    phone: String,
-    quantity: Number,
-    amount: Number,
-    reference: String,
-    qrData: String,
+    userId: { type: Schema.Types.ObjectId, ref: "User" },
+    passId: { type: Schema.Types.ObjectId, ref: "Pass" },
+    passName: { type: String, required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    amount: { type: Number, required: true },
+    reference: { type: String, required: true, unique: true },
+    qrCode: String,
     razorpayOrderId: String,
-    razorpayPaymentId: String,
+    paymentId: String,
     status: {
       type: String,
       enum: ["PENDING", "PAID", "FAILED"],
       default: "PENDING",
     },
-    checkedIn: { type: Boolean, default: false },
-    checkedInAt: { type: Date },
+    isUsed: { type: Boolean, default: false },
+    usedAt: Date,
   },
   { timestamps: true }
 );
 
 export default mongoose.models.Booking ||
-  mongoose.model("Booking", BookingSchema);
+  mongoose.model<IBooking>("Booking", BookingSchema);

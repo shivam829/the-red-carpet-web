@@ -2,19 +2,19 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import dbConnect from "@/lib/db";
 import BookingModel from "@/models/Booking";
+import UserModel from "@/models/User";
 import QRCode from "qrcode";
 import { generateTicketPDF } from "@/lib/generateTicketPDF";
-// NOTE: sendEmail & sendWhatsApp are intentionally NOT used
-// because env variables are not configured yet
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    // Avoid Mongoose + TS overload issues
     const Booking = BookingModel as any;
+    const User = UserModel as any;
 
     const {
       bookingId,
@@ -80,8 +80,44 @@ export async function POST(req: Request) {
 
     await booking.save();
 
-    /* ------------------ OPTIONAL: PDF GENERATION (NO EMAIL SEND) ------------------ */
-    // This is safe to keep for future use / testing
+    /* ------------------ ASSOCIATE WITH USER ------------------ */
+
+    // Get user from auth token (if logged in)
+    try {
+      const token = req.headers.get("cookie")?.split("auth_token=")[1]?.split(";")[0];
+      
+      if (token) {
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+        
+        const user = await User.findById(decoded.userId);
+        
+        if (user) {
+          // Update booking with userId
+          booking.userId = user._id;
+          await booking.save();
+          
+          // Add booking to user's bookings array
+          if (!user.bookings.includes(booking._id)) {
+            user.bookings.push(booking._id);
+            await user.save();
+          }
+        }
+      }
+    } catch (err) {
+      console.log("Could not associate with user (user might not be logged in)");
+    }
+
+    // Also try to find/create user by phone (backward compatibility)
+    let phoneUser = await User.findOne({ phone: booking.phone });
+
+    if (phoneUser) {
+      if (!phoneUser.bookings.includes(booking._id)) {
+        phoneUser.bookings.push(booking._id);
+        await phoneUser.save();
+      }
+    }
+
+    /* ------------------ OPTIONAL: PDF GENERATION ------------------ */
     try {
       await generateTicketPDF({
         name: booking.name,
@@ -92,7 +128,6 @@ export async function POST(req: Request) {
       });
     } catch (err) {
       console.error("PDF GENERATION FAILED (IGNORED):", err);
-      // ❗ Do NOT fail payment
     }
 
     /* ------------------ FINAL RESPONSE ------------------ */

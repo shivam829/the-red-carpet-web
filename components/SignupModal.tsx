@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 
-interface LoginModalProps {
+interface SignupModalProps {
   onClose: () => void;
-  onSuccess: (user: any) => void;
-  onSwitchToSignup: () => void;
+  onSuccess: () => void;
+  onSwitchToLogin: () => void;
 }
 
-export default function LoginModal({ onClose, onSuccess, onSwitchToSignup }: LoginModalProps) {
+export default function SignupModal({ onClose, onSuccess, onSwitchToLogin }: SignupModalProps) {
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +20,8 @@ export default function LoginModal({ onClose, onSuccess, onSwitchToSignup }: Log
     e.preventDefault();
     setError("");
 
-    if (!phone || !password) {
+    // Validation
+    if (!name || !phone || !password || !confirmPassword) {
       setError("All fields are required");
       return;
     }
@@ -28,22 +31,33 @@ export default function LoginModal({ onClose, onSuccess, onSwitchToSignup }: Log
       return;
     }
 
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({ name, phone, password }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        onSuccess(data.user);
-        onClose();
+        onSuccess();
+        alert("Account created successfully! Please login.");
+        onSwitchToLogin();
       } else {
-        setError(data.message || "Login failed");
+        setError(data.message || "Signup failed");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -56,10 +70,21 @@ export default function LoginModal({ onClose, onSuccess, onSwitchToSignup }: Log
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-red-900 to-black border-2 border-gold p-8 rounded-2xl shadow-2xl w-full max-w-md">
         <h2 className="text-3xl font-bold text-gold text-center mb-6">
-          Login
+          Sign Up
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-white mb-2 text-sm">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
+              placeholder="Enter your name"
+            />
+          </div>
+
           <div>
             <label className="block text-white mb-2 text-sm">Phone Number</label>
             <input
@@ -79,7 +104,18 @@ export default function LoginModal({ onClose, onSuccess, onSwitchToSignup }: Log
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
-              placeholder="Enter your password"
+              placeholder="Minimum 6 characters"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-2 text-sm">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
+              placeholder="Re-enter password"
             />
           </div>
 
@@ -92,17 +128,17 @@ export default function LoginModal({ onClose, onSuccess, onSwitchToSignup }: Log
             disabled={loading}
             className="w-full bg-gold text-black py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Creating Account..." : "Sign Up"}
           </button>
 
           <div className="text-center text-sm text-gray-300">
-            Don't have an account?{" "}
+            Already have an account?{" "}
             <button
               type="button"
-              onClick={onSwitchToSignup}
+              onClick={onSwitchToLogin}
               className="text-gold hover:underline font-semibold"
             >
-              Sign Up
+              Login
             </button>
           </div>
 

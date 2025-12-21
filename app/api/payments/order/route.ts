@@ -1,5 +1,5 @@
+// FILE: app/api/payments/order/route.ts
 export const dynamic = "force-dynamic";
-
 
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
@@ -19,7 +19,6 @@ export async function POST(req: Request) {
 
     const { passId, name, email, phone, quantity } = await req.json();
 
-    // ✅ 1. Validation
     if (!passId || !name || !email || !phone || !quantity) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -27,7 +26,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ 2. Get pass
     const pass = await Pass.findOne({ _id: passId } as any);
     if (!pass) {
       return NextResponse.json({ error: "Pass not found" }, { status: 404 });
@@ -35,9 +33,9 @@ export async function POST(req: Request) {
 
     const totalAmount = pass.price * quantity;
 
-    // ✅ 3. Create booking
     const booking = await Booking.create({
       passId: pass._id,
+      passName: pass.name, // ADD THIS LINE
       name,
       email,
       phone,
@@ -47,9 +45,8 @@ export async function POST(req: Request) {
       reference: crypto.randomBytes(6).toString("hex").toUpperCase(),
     });
 
-    // ✅ 4. Create Razorpay order
     const order = await razorpay.orders.create({
-      amount: totalAmount * 100, // paise
+      amount: totalAmount * 100,
       currency: "INR",
       receipt: booking._id.toString(),
     });

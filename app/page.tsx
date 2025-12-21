@@ -10,7 +10,7 @@ import Header from "@/components/Header";
 export default function App() {
   return (
     <div>
-      {/* Header with Login/Sign Up Button */}
+      {/* Header with Login/Sign Up Buttons */}
       <Header />
 
       <main className="relative text-white">
@@ -52,7 +52,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            Central India’s Biggest Open-Air New Year Celebration
+            Central India's Biggest Open-Air New Year Celebration
           </motion.p>
 
           <motion.p
@@ -78,7 +78,6 @@ export default function App() {
           <h2 className="text-4xl font-bold text-gold text-center mb-14">
             The Night Unfolds
           </h2>
-
           <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
             {[
               {
@@ -119,9 +118,7 @@ export default function App() {
         <footer className="py-12 text-center text-gray-300 bg-black/90">
           <p>📍 Amber by Sayaji, Bhopal</p>
           <p>📞 +91 7000443100</p>
-          <p className="mt-4 text-sm">
-            © 2025 THE RED CARPET. All rights reserved.
-          </p>
+          <p className="mt-4 text-sm">© 2025 THE RED CARPET. All rights reserved.</p>
         </footer>
       </main>
     </div>
