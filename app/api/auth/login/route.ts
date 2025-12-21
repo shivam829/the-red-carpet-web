@@ -9,8 +9,9 @@ import User from "@/models/User";
 export async function POST(req: Request) {
   try {
     await connectDB();
-    
-    const { phone, password } = await req.json();
+
+    const { phone, password }: { phone: string; password: string } =
+      await req.json();
 
     // Validate input
     if (!phone || !password) {
@@ -21,16 +22,23 @@ export async function POST(req: Request) {
     }
 
     // Find user
-    const user = await User.findOne({ phone });
+    const user = await User.findOne({ phone }).exec();
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "User not found. Please sign up first." },
+        {
+          success: false,
+          message: "User not found. Please sign up first.",
+        },
         { status: 404 }
       );
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password
+    );
+
     if (!isPasswordValid) {
       return NextResponse.json(
         { success: false, message: "Invalid password" },
@@ -60,12 +68,12 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 7 * 24 * 60 * 60,
       path: "/",
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error) {
     console.error("LOGIN ERROR:", error);
     return NextResponse.json(
       { success: false, message: "Login failed" },
