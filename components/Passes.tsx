@@ -21,50 +21,48 @@ export default function Passes() {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   /* ------------------ FETCH PASSES ------------------ */
-  useEffect(() => {
-    let mounted = true;
+  /* ------------------ FETCH PASSES ------------------ */
+useEffect(() => {
+  let mounted = true;
+  let interval: any = null;
 
-    const fetchPasses = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/passes`, {
-          cache: "no-store",
-        });
+  const fetchPasses = async () => {
+    try {
+      const res = await fetch("/api/passes", { cache: "no-store" });
 
-        if (!res.ok) {
-          console.error("Passes API failed:", res.status);
-          if (mounted) {
-            setPasses([]);
-            setTotalRemaining(0);
-          }
-          return;
-        }
-
-        const data = await res.json();
-
-        if (!Array.isArray(data)) return;
-
-        if (mounted) {
-          setPasses(data);
-          const total = data.reduce(
-            (sum: number, p: any) =>
-              sum + (Number(p.remainingCount) || 0),
-            0
-          );
-          setTotalRemaining(total);
-        }
-      } catch (err) {
-        console.error("Fetch passes error:", err);
+      if (!res.ok) {
+        console.error("Passes API failed:", res.status);
+        clearInterval(interval); // 🚨 STOP polling on failure
+        return;
       }
-    };
 
-    fetchPasses();
-    const interval = setInterval(fetchPasses, 5000);
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
 
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, []);
+      if (mounted) {
+        setPasses(data);
+        setTotalRemaining(
+          data.reduce(
+            (sum: number, p: any) => sum + (p.remainingCount || 0),
+            0
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Fetch passes error:", err);
+      clearInterval(interval); // 🚨 STOP polling
+    }
+  };
+
+  fetchPasses();
+  interval = setInterval(fetchPasses, 5000);
+
+  return () => {
+    mounted = false;
+    clearInterval(interval);
+  };
+}, []);
+
 
   /* ------------------ FETCH USER (NON-BLOCKING) ------------------ */
   useEffect(() => {
