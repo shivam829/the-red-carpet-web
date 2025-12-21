@@ -9,30 +9,28 @@ export async function GET() {
   try {
     await dbConnect();
 
-    // ✅ SAFE QUERY (handles old docs without `visible`)
+    // ✅ Fetch passes safely (old + new docs)
     const passes = await Pass.find({
       $or: [{ visible: true }, { visible: { $exists: false } }],
-    }).exec();
+    }).lean();
 
-    /* ---------- AUTO INITIALISE COUNTS ---------- */
-    for (const pass of passes) {
-      let expectedCount: number | null = null;
+    // ✅ Apply defaults WITHOUT mutating DB
+    const normalized = passes.map((pass: any) => {
+      let defaultCount = pass.remainingCount;
 
-      if (pass.name === "Classic") expectedCount = 250;
-      if (pass.name === "VIP") expectedCount = 280;
-      if (pass.name === "VVIP") expectedCount = 170;
-
-      if (
-        expectedCount !== null &&
-        (pass.remainingCount === undefined ||
-          pass.remainingCount === null)
-      ) {
-        pass.remainingCount = expectedCount;
-        await pass.save();
+      if (defaultCount == null) {
+        if (pass.name === "Classic") defaultCount = 250;
+        if (pass.name === "VIP") defaultCount = 280;
+        if (pass.name === "VVIP") defaultCount = 170;
       }
-    }
 
-    return NextResponse.json(passes);
+      return {
+        ...pass,
+        remainingCount: defaultCount ?? 0,
+      };
+    });
+
+    return NextResponse.json(normalized);
   } catch (err) {
     console.error("PASSES API ERROR:", err);
     return NextResponse.json(

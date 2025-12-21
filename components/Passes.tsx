@@ -206,6 +206,12 @@ export default function Passes() {
           ))}
         </div>
       </section>
+      {passes.length === 0 && (
+  <p className="col-span-3 text-center text-gray-400">
+    Passes will be available shortly.
+  </p>
+)}
+
 
       {selectedPass && (
         <BookingModal
@@ -217,5 +223,7 @@ export default function Passes() {
         />
       )}
     </>
+    
   );
+  
 }
