@@ -9,24 +9,21 @@ export async function GET() {
   try {
     await dbConnect();
 
-    // ✅ Fetch passes safely (old + new docs)
-    const passes = await Pass.find({
-      $or: [{ visible: true }, { visible: { $exists: false } }],
-    }).lean();
+    // ✅ Fetch ALL passes safely
+    const passes = await Pass.find({}).lean();
 
-    // ✅ Apply defaults WITHOUT mutating DB
     const normalized = passes.map((pass: any) => {
-      let defaultCount = pass.remainingCount;
+      let remainingCount = pass.remainingCount;
 
-      if (defaultCount == null) {
-        if (pass.name === "Classic") defaultCount = 250;
-        if (pass.name === "VIP") defaultCount = 280;
-        if (pass.name === "VVIP") defaultCount = 170;
+      if (remainingCount == null) {
+        if (pass.name === "Classic") remainingCount = 250;
+        if (pass.name === "VIP") remainingCount = 280;
+        if (pass.name === "VVIP") remainingCount = 170;
       }
 
       return {
         ...pass,
-        remainingCount: defaultCount ?? 0,
+        remainingCount: remainingCount ?? 0,
       };
     });
 
