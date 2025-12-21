@@ -9,11 +9,9 @@ export async function GET() {
   try {
     await dbConnect();
 
-    const passes = await Pass.find({
-      visible: { $ne: false }, // ✅ includes true + undefined
-    }).exec();
+    const passes = await Pass.find({ visible: true }).exec();
 
-    /* ---------- SAFE AUTO INITIALISE COUNTS ---------- */
+    /* ---------- AUTO INITIALISE COUNTS ---------- */
     for (const pass of passes) {
       let expectedCount: number | null = null;
 
@@ -23,8 +21,8 @@ export async function GET() {
 
       if (
         expectedCount !== null &&
-        (typeof pass.remainingCount !== "number" ||
-          pass.remainingCount <= 0)
+        (pass.remainingCount === undefined ||
+          pass.remainingCount === null)
       ) {
         pass.remainingCount = expectedCount;
         await pass.save();
@@ -35,7 +33,7 @@ export async function GET() {
   } catch (err) {
     console.error("PASSES API ERROR:", err);
     return NextResponse.json(
-      { error: "Failed to fetch passes" },
+      { error: "Failed to load passes" },
       { status: 500 }
     );
   }

@@ -10,9 +10,7 @@ declare global {
 }
 
 const API_BASE =
-  typeof window !== "undefined"
-    ? window.location.origin
-    : "";
+  typeof window !== "undefined" ? window.location.origin : "";
 
 export default function Passes() {
   const [passes, setPasses] = useState<any[]>([]);
@@ -22,7 +20,7 @@ export default function Passes() {
   const [user, setUser] = useState<any>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
-  /* ------------------ FETCH PASSES (SAFE) ------------------ */
+  /* ------------------ FETCH PASSES ------------------ */
   useEffect(() => {
     let mounted = true;
 
@@ -43,10 +41,7 @@ export default function Passes() {
 
         const data = await res.json();
 
-        if (!Array.isArray(data)) {
-          console.error("Invalid passes response:", data);
-          return;
-        }
+        if (!Array.isArray(data)) return;
 
         if (mounted) {
           setPasses(data);
@@ -71,16 +66,13 @@ export default function Passes() {
     };
   }, []);
 
-  /* ------------------ FETCH USER (SAFE) ------------------ */
+  /* ------------------ FETCH USER (NON-BLOCKING) ------------------ */
   useEffect(() => {
     fetch(`${API_BASE}/api/auth/me`, {
       credentials: "include",
       cache: "no-store",
     })
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         setUser(data?.success ? data.user : null);
       })
@@ -120,7 +112,7 @@ export default function Passes() {
 
       const data = await res.json();
 
-      const options = {
+      new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         amount: data.amount,
         currency: "INR",
@@ -154,9 +146,7 @@ export default function Passes() {
           }
         },
         theme: { color: "#C9A24D" },
-      };
-
-      new window.Razorpay(options).open();
+      }).open();
     } finally {
       setLoading(false);
       setSelectedPass(null);
