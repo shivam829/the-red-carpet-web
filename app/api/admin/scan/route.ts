@@ -9,9 +9,10 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { bookingId } = await req.json();
+    const { bookingId }: { bookingId: string } = await req.json();
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).exec();
+
     if (!booking) {
       return NextResponse.json(
         { success: false, message: "Invalid ticket" },
@@ -36,6 +37,7 @@ export async function POST(req: Request) {
       booking,
     });
   } catch (err) {
+    console.error("Scan error:", err);
     return NextResponse.json(
       { success: false, message: "Scan failed" },
       { status: 500 }

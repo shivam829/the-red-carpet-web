@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IBooking extends Document {
   userId?: mongoose.Types.ObjectId;
@@ -13,6 +13,9 @@ export interface IBooking extends Document {
   qrCode?: string;
   razorpayOrderId?: string;
   paymentId?: string;
+   // ✅ ADD THESE
+  orderId?: string;
+  paidAt?: Date;
   status: "PENDING" | "PAID" | "FAILED";
   isUsed: boolean;
   usedAt?: Date;
@@ -20,10 +23,10 @@ export interface IBooking extends Document {
   updatedAt: Date;
 }
 
-const BookingSchema = new Schema(
+const BookingSchema = new Schema<IBooking>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User" },
-    passId: { type: Schema.Types.ObjectId, ref: "Pass" },
+    passId: { type: Schema.Types.ObjectId, ref: "Pass", required: true },
     passName: { type: String, required: true },
     name: { type: String, required: true },
     email: { type: String, required: true },
@@ -45,5 +48,8 @@ const BookingSchema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Booking ||
+const Booking: Model<IBooking> =
+  (mongoose.models.Booking as Model<IBooking>) ||
   mongoose.model<IBooking>("Booking", BookingSchema);
+
+export default Booking;

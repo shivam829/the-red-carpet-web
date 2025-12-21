@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     verifyAdmin();
     await dbConnect();
 
-    const { reference } = await req.json();
+    const { reference }: { reference: string } = await req.json();
 
     if (!reference) {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const booking = await Booking.findOne({ reference });
+    const booking = await Booking.findOne({ reference }).exec();
 
     if (!booking) {
       return NextResponse.json(
@@ -42,7 +42,8 @@ export async function POST(req: Request) {
       message: "Entry verified successfully",
       booking,
     });
-  } catch {
+  } catch (err) {
+    console.error("ADMIN VERIFY ERROR:", err);
     return NextResponse.json(
       { success: false, message: "Unauthorized" },
       { status: 401 }
