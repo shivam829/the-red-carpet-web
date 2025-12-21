@@ -14,9 +14,13 @@ export default function MyTicketsPage() {
     checkAuth();
   }, []);
 
+  // ✅ FIX 1: auth check must include credentials
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/me");
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+
       const data = await response.json();
 
       if (!data.success) {
@@ -25,15 +29,19 @@ export default function MyTicketsPage() {
       }
 
       setUser(data.user);
-      fetchBookings();
+      await fetchBookings();
     } catch (error) {
       router.push("/");
     }
   };
 
+  // ✅ FIX 2: bookings fetch must include credentials
   const fetchBookings = async () => {
     try {
-      const response = await fetch("/api/user/bookings");
+      const response = await fetch("/api/user/bookings", {
+        credentials: "include",
+      });
+
       const data = await response.json();
 
       if (data.success) {
@@ -62,7 +70,7 @@ export default function MyTicketsPage() {
             <h1 className="text-4xl font-bold text-gold mb-2">My Tickets</h1>
             <p className="text-gray-300">Welcome back, {user?.name}!</p>
           </div>
-          
+
           <Link href="/">
             <button className="bg-white/10 border border-gold/30 text-white px-6 py-3 rounded-lg hover:bg-white/20 transition">
               ← Back to Home
@@ -105,7 +113,10 @@ export default function MyTicketsPage() {
                   <p><strong>Reference:</strong> {booking.reference}</p>
                   <p><strong>Quantity:</strong> {booking.quantity} tickets</p>
                   <p><strong>Amount:</strong> ₹{booking.amount}</p>
-                  <p><strong>Booked on:</strong> {new Date(booking.createdAt).toLocaleDateString()}</p>
+                  <p>
+                    <strong>Booked on:</strong>{" "}
+                    {new Date(booking.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
 
                 <div className="flex gap-3">
@@ -114,11 +125,11 @@ export default function MyTicketsPage() {
                       View Ticket
                     </button>
                   </Link>
-                  
+
                   <button
-                    onClick={() => {
-                      window.open(`/ticket/${booking._id}`, '_blank');
-                    }}
+                    onClick={() =>
+                      window.open(`/ticket/${booking._id}`, "_blank")
+                    }
                     className="bg-white/10 border border-gold/30 text-white px-4 py-3 rounded-lg hover:bg-white/20 transition"
                     title="Print"
                   >

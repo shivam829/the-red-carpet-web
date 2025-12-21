@@ -17,17 +17,22 @@ export default function Passes() {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
+    // Load passes
     fetch("/api/passes")
       .then((res) => res.json())
       .then(setPasses)
       .catch(() => setPasses([]));
 
-    // Check if user is logged in
-    fetch("/api/auth/me")
+    // ✅ FIX: include cookies
+    fetch("/api/auth/me", {
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           setUser(data.user);
+        } else {
+          setUser(null);
         }
       })
       .catch(() => setUser(null));
@@ -46,10 +51,10 @@ export default function Passes() {
     try {
       setLoading(true);
 
-      // Create booking + Razorpay order
       const res = await fetch("/api/payments/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           passId: pass._id,
           name: form.name,
@@ -60,20 +65,12 @@ export default function Passes() {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        console.error("ORDER API ERROR:", text);
         alert("Unable to initiate payment");
         return;
       }
 
       const data = await res.json();
 
-      if (!window.Razorpay) {
-        alert("Payment SDK not loaded. Please refresh.");
-        return;
-      }
-
-      // Razorpay checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         amount: data.amount,
@@ -82,39 +79,32 @@ export default function Passes() {
         description: pass.name,
         order_id: data.orderId,
 
-        handler: async function (response: any) {
-          try {
-            const verifyRes = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                bookingId: data.bookingId,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
+        handler: async (response: any) => {
+          const verifyRes = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              bookingId: data.bookingId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
 
-            const verify = await verifyRes.json();
+          const verify = await verifyRes.json();
 
-            if (verify.success) {
-              window.location.href = `/ticket/${data.bookingId}`;
-            } else {
-              alert("Payment completed but verification failed");
-            }
-          } catch (err) {
-            console.error("VERIFY ERROR:", err);
-            alert("Payment verification error");
+          if (verify.success) {
+            window.location.href = `/ticket/${data.bookingId}`;
+          } else {
+            alert("Payment verification failed");
           }
         },
-
         theme: { color: "#C9A24D" },
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err) {
-      console.error("START PAYMENT ERROR:", err);
+      new window.Razorpay(options).open();
+    } catch {
       alert("Payment failed");
     } finally {
       setLoading(false);
@@ -130,8 +120,8 @@ export default function Passes() {
         </h2>
 
         {showAuthPrompt && (
-          <div className="fixed top-24 right-4 bg-red-900 border border-red-500 text-white px-6 py-4 rounded-lg shadow-xl z-50 animate-pulse">
-            <p className="font-semibold">⚠️ Please Login or Sign Up to book passes!</p>
+          <div className="fixed top-24 right-4 bg-red-900 border border-red-500 text-white px-6 py-4 rounded-lg shadow-xl z-50">
+            ⚠️ Please Login or Sign Up to book passes!
           </div>
         )}
 
@@ -144,13 +134,12 @@ export default function Passes() {
               <h3 className="text-2xl font-bold text-gold mb-2">
                 {pass.name}
               </h3>
-
               <p className="text-xl mb-4">₹{pass.price}</p>
 
               <button
                 disabled={loading}
                 onClick={() => handleBookNowClick(pass)}
-                className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition disabled:opacity-50"
+                className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition"
               >
                 {loading ? "Processing..." : "Book Now"}
               </button>

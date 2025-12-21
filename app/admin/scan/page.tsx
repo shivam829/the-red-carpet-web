@@ -63,13 +63,14 @@ export default function AdminScanPage() {
       <p className="mt-6 text-lg">{message}</p>
 
       {result && (
-        <div className="mt-4 bg-green-500 text-black p-4 rounded-lg text-center">
-          <p><b>Name:</b> {result.name}</p>
-          <p><b>Pass:</b> {result.pass}</p>
-          <p><b>Quantity:</b> {result.quantity}</p>
-          <p><b>Reference:</b> {result.reference}</p>
-        </div>
-      )}
+  <div className="mt-4 bg-green-500 text-black p-4 rounded-lg text-center">
+    <p><b>Name:</b> {result.name}</p>
+    <p><b>Pass:</b> {result.pass}</p>
+    <p><b>Quantity:</b> {result.quantity}</p>
+    <p><b>Reference:</b> {result.reference}</p>
+  </div>
+)}
+
     </div>
   );
 }
