@@ -1,21 +1,28 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
-const PassSchema = new Schema(
+export interface IPass extends Document {
+  name: string;
+  price: number;
+  phase?: number;
+  visible?: boolean;
+  remainingCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const PassSchema = new Schema<IPass>(
   {
-    name: String,
-    price: Number,
-    phase: Number,
-    visible: Boolean,
-
-    // ✅ NEW
-    remainingCount: {
-      type: Number,
-      required: true,
-      default: 590,
-    },
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    phase: { type: Number },
+    visible: { type: Boolean, default: true },
+    remainingCount: { type: Number, required: true },
   },
   { timestamps: true }
 );
 
-export default mongoose.models.Pass ||
-  mongoose.model("Pass", PassSchema);
+const Pass: Model<IPass> =
+  (mongoose.models.Pass as Model<IPass>) ||
+  mongoose.model<IPass>("Pass", PassSchema);
+
+export default Pass;
