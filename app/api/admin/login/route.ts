@@ -11,7 +11,8 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { email, password } = await req.json();
+    const { email, password }: { email: string; password: string } =
+      await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       email === process.env.ADMIN_EMAIL &&
       password === process.env.ADMIN_PASSWORD
     ) {
-      let admin = await Admin.findOne({ email });
+      let admin = await Admin.findOne({ email: email });
 
       if (!admin) {
         admin = await Admin.create({
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
     }
 
     // 🔐 DB ADMIN
-    const admin = await Admin.findOne({ email });
+    const admin = await Admin.findOne({ email: email });
     if (!admin) {
       return NextResponse.json({ success: false }, { status: 401 });
     }
