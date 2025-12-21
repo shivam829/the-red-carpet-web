@@ -1,44 +1,42 @@
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Pass from "@/models/Pass";
 
-
-
 export async function GET() {
-  await dbConnect();
+  try {
+    await dbConnect();
 
-  const passes = await Pass.find()
-    .where("visible")
-    .equals(true)
-    .exec();
+    const passes = await Pass.find({
+      visible: { $ne: false }, // ✅ includes true + undefined
+    }).exec();
 
-  /* ---------- AUTO INITIALISE COUNTS (MOCK DB SAFE) ---------- */
-  for (const pass of passes) {
-    let expectedCount: number | null = null;
+    /* ---------- SAFE AUTO INITIALISE COUNTS ---------- */
+    for (const pass of passes) {
+      let expectedCount: number | null = null;
 
-    if (pass.name === "Classic") expectedCount = 250;
-    if (pass.name === "VIP") expectedCount = 280;
-    if (pass.name === "VVIP") expectedCount = 170;
+      if (pass.name === "Classic") expectedCount = 250;
+      if (pass.name === "VIP") expectedCount = 280;
+      if (pass.name === "VVIP") expectedCount = 170;
 
-    // ✅ Only set if not already customised
-    if (
-      expectedCount !== null &&
-      (pass.remainingCount === undefined ||
-        pass.remainingCount === null ||
-        pass.remainingCount === 590)
-    ) {
-      pass.remainingCount = expectedCount;
-      await pass.save();
+      if (
+        expectedCount !== null &&
+        (typeof pass.remainingCount !== "number" ||
+          pass.remainingCount <= 0)
+      ) {
+        pass.remainingCount = expectedCount;
+        await pass.save();
+      }
     }
+
+    return NextResponse.json(passes);
+  } catch (err) {
+    console.error("PASSES API ERROR:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch passes" },
+      { status: 500 }
+    );
   }
-
-  console.log("MONGO URI:", process.env.MONGODB_URI);
-console.log("PASS COUNT:", await Pass.countDocuments());
-  return NextResponse.json(passes);
-  
-
 }

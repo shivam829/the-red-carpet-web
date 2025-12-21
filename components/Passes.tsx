@@ -9,6 +9,11 @@ declare global {
   }
 }
 
+const API_BASE =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : "";
+
 export default function Passes() {
   const [passes, setPasses] = useState<any[]>([]);
   const [totalRemaining, setTotalRemaining] = useState(0);
@@ -17,30 +22,68 @@ export default function Passes() {
   const [user, setUser] = useState<any>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
-  // 🔁 REAL-TIME POLLING (5 sec)
+  /* ------------------ FETCH PASSES (SAFE) ------------------ */
   useEffect(() => {
+    let mounted = true;
+
     const fetchPasses = async () => {
-      const res = await fetch("/api/passes");
-      const data = await res.json();
+      try {
+        const res = await fetch(`${API_BASE}/api/passes`, {
+          cache: "no-store",
+        });
 
-      setPasses(data);
+        if (!res.ok) {
+          console.error("Passes API failed:", res.status);
+          if (mounted) {
+            setPasses([]);
+            setTotalRemaining(0);
+          }
+          return;
+        }
 
-      const total = data.reduce(
-        (sum: number, p: any) => sum + (p.remainingCount || 0),
-        0
-      );
-      setTotalRemaining(total);
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          console.error("Invalid passes response:", data);
+          return;
+        }
+
+        if (mounted) {
+          setPasses(data);
+          const total = data.reduce(
+            (sum: number, p: any) =>
+              sum + (Number(p.remainingCount) || 0),
+            0
+          );
+          setTotalRemaining(total);
+        }
+      } catch (err) {
+        console.error("Fetch passes error:", err);
+      }
     };
 
     fetchPasses();
     const interval = setInterval(fetchPasses, 5000);
-    return () => clearInterval(interval);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
+  /* ------------------ FETCH USER (SAFE) ------------------ */
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => setUser(data.success ? data.user : null))
+    fetch(`${API_BASE}/api/auth/me`, {
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        setUser(data?.success ? data.user : null);
+      })
       .catch(() => setUser(null));
   }, []);
 
@@ -57,7 +100,7 @@ export default function Passes() {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/payments/order", {
+      const res = await fetch(`${API_BASE}/api/payments/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -70,6 +113,11 @@ export default function Passes() {
         }),
       });
 
+      if (!res.ok) {
+        alert("Failed to create order");
+        return;
+      }
+
       const data = await res.json();
 
       const options = {
@@ -80,17 +128,23 @@ export default function Passes() {
         description: pass.name,
         order_id: data.orderId,
         handler: async (response: any) => {
-          const verifyRes = await fetch("/api/payments/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({
-              bookingId: data.bookingId,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
+          const verifyRes = await fetch(
+            `${API_BASE}/api/payments/verify`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                bookingId: data.bookingId,
+                razorpay_payment_id:
+                  response.razorpay_payment_id,
+                razorpay_order_id:
+                  response.razorpay_order_id,
+                razorpay_signature:
+                  response.razorpay_signature,
+              }),
+            }
+          );
 
           const verify = await verifyRes.json();
           if (verify.success) {
@@ -116,7 +170,6 @@ export default function Passes() {
           Passes
         </h2>
 
-        {/* TOTAL AVAILABLE */}
         <div className="text-center mb-10">
           <div className="inline-block bg-red-900/80 border border-gold px-8 py-4 rounded-2xl">
             <p className="text-xl font-bold text-gold">
@@ -126,6 +179,12 @@ export default function Passes() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {passes.length === 0 && (
+            <p className="col-span-3 text-center text-gray-400">
+              No passes available at the moment.
+            </p>
+          )}
+
           {passes.map((pass) => (
             <div
               key={pass._id}
@@ -149,24 +208,12 @@ export default function Passes() {
                 onClick={() => handleBookNowClick(pass)}
                 className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition disabled:opacity-50"
               >
-                {pass.remainingCount <= 0 ? "Sold Out" : "Book Now"}
+                {pass.remainingCount <= 0
+                  ? "Sold Out"
+                  : "Book Now"}
               </button>
             </div>
           ))}
-        </div>
-
-        {/* DISTRICT CTA */}
-        <div className="mt-16 flex justify-center">
-          <a
-            href="https://www.district.in/events/the-red-carpet-bhopals-grandest-new-year-celebration-dec31-2025-buy-tickets"
-            target="_blank"
-            className="flex items-center gap-4 border border-gold px-8 py-4 rounded-xl hover:bg-white/10 transition"
-          >
-            <span className="text-lg font-semibold text-white">
-              Book on District App
-            </span>
-            <img src="/download.jpg" className="w-10 h-10" />
-          </a>
         </div>
       </section>
 
@@ -174,7 +221,9 @@ export default function Passes() {
         <BookingModal
           pass={selectedPass}
           onClose={() => setSelectedPass(null)}
-          onSubmit={(data) => startPayment(selectedPass, data)}
+          onSubmit={(data) =>
+            startPayment(selectedPass, data)
+          }
         />
       )}
     </>
