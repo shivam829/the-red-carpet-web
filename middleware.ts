@@ -4,16 +4,16 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ✅ Allow login page always
+  // ✅ Allow admin login page always
   if (pathname === "/admin/login") {
     return NextResponse.next();
   }
 
-  // 🔒 Protect other admin routes
+  // ✅ Protect admin routes
   if (pathname.startsWith("/admin")) {
-    const isLoggedIn = req.cookies.get("admin");
+    const token = req.cookies.get("admin_token");
 
-    if (!isLoggedIn) {
+    if (!token) {
       return NextResponse.redirect(
         new URL("/admin/login", req.url)
       );
@@ -22,3 +22,7 @@ export function middleware(req: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: ["/admin/:path*"],
+};

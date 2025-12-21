@@ -1,17 +1,24 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Booking from "@/models/Booking";
+import { verifyAdmin } from "@/lib/adminAuth";
 
 export async function POST(req: Request) {
   try {
+    verifyAdmin();
     await dbConnect();
 
-    const { bookingId } = await req.json();
+    const { reference } = await req.json();
 
-    const booking = await Booking.findById(bookingId);
+    if (!reference) {
+      return NextResponse.json(
+        { success: false, message: "Reference required" },
+        { status: 400 }
+      );
+    }
+
+    const booking = await Booking.findOne({ reference });
+
     if (!booking) {
       return NextResponse.json(
         { success: false, message: "Invalid ticket" },
@@ -22,7 +29,7 @@ export async function POST(req: Request) {
     if (booking.isUsed) {
       return NextResponse.json(
         { success: false, message: "Ticket already used" },
-        { status: 400 }
+        { status: 409 }
       );
     }
 
@@ -32,13 +39,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Entry allowed",
+      message: "Entry verified successfully",
       booking,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { success: false, message: "Scan failed" },
-      { status: 500 }
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
     );
   }
 }

@@ -1,9 +1,22 @@
 import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
 
-export function verifyAdmin(req: Request) {
-  const auth = req.headers.get("authorization");
-  if (!auth) throw new Error("Unauthorized");
+export function verifyAdmin() {
+  const token = cookies().get("admin_token")?.value;
+  if (!token) throw new Error("Not authenticated");
 
-  const token = auth.replace("Bearer ", "");
-  jwt.verify(token, process.env.JWT_SECRET!);
+  const payload = jwt.verify(
+    token,
+    process.env.JWT_ADMIN_SECRET!
+  ) as any;
+
+  return payload;
+}
+
+export function verifySuperAdmin() {
+  const payload = verifyAdmin();
+  if (payload.role !== "SUPER") {
+    throw new Error("Forbidden");
+  }
+  return payload;
 }

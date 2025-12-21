@@ -32,4 +32,19 @@ html {
     border-radius: 20px !important;
     padding: 24px !important;
   }
+
+  @keyframes lantern {
+  from {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(-120vh);
+    opacity: 0;
+  }
+}
+.animate-lantern {
+  animation: lantern 18s linear infinite;
+}
+
 }

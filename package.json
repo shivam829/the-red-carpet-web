@@ -12,18 +12,22 @@
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.23.26",
     "html2canvas": "^1.4.1",
+    "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^3.0.4",
+    "jsqr": "^1.4.0",
     "link": "^2.1.1",
     "mongoose": "^9.0.2",
     "next": "14.1.0",
     "nodemailer": "^7.0.11",
+    "pdfjs-dist": "^5.4.449",
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "twilio": "^5.11.1"
+    "twilio": "^5.11.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

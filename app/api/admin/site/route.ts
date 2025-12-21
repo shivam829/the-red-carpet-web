@@ -4,8 +4,10 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import connectDB  from "@/lib/db";
 import SiteContent from "@/models/SiteContent";
+import { verifyAdmin } from "@/lib/adminAuth";
 
 export async function GET() {
+  verifyAdmin();
   await connectDB();
   const content = await SiteContent.findOne().exec();
   return NextResponse.json(content);

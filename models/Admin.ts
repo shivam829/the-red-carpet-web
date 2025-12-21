@@ -1,19 +1,24 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import bcrypt from "bcryptjs";
 
-export interface AdminDocument extends Document {
+export interface IAdmin extends Document {
   email: string;
   password: string;
   role: "SUPER" | "STAFF";
 }
 
-const AdminSchema = new Schema<AdminDocument>({
-  email: { type: String, unique: true },
-  password: String,
-  role: { type: String, default: "STAFF" },
-});
+const AdminSchema = new Schema(
+  {
+    email: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    role: {
+      type: String,
+      enum: ["SUPER", "STAFF"],
+      default: "STAFF",
+    },
+  },
+  { timestamps: true }
+);
 
-const Admin: Model<AdminDocument> =
-  mongoose.models.Admin ||
-  mongoose.model<AdminDocument>("Admin", AdminSchema);
-
-export default Admin;
+export default mongoose.models.Admin ||
+  mongoose.model<IAdmin>("Admin", AdminSchema);

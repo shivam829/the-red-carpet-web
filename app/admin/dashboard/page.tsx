@@ -1,50 +1,41 @@
 "use client";
+
 import { useEffect, useState } from "react";
 
 export default function AdminDashboard() {
-  const [data, setData] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    checkedIn: 0,
+  });
 
   useEffect(() => {
-    fetch("/api/admin/bookings", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-      },
-    })
+    fetch("/api/admin/bookings", { credentials: "include" })
       .then(res => res.json())
-      .then(setData);
+      .then(data => {
+        const bookings = data.bookings || [];
+        setStats({
+          total: bookings.length,
+          checkedIn: bookings.filter((b: any) => b.isUsed).length,
+        });
+      })
+      .catch(console.error);
   }, []);
 
-  const exportCSV = () => {
-    const rows = [
-      ["Name", "Email", "Phone", "Pass", "Qty", "Ref", "Checked In"],
-      ...data.map(b => [
-        b.name,
-        b.email,
-        b.phone,
-        b.passName,
-        b.quantity,
-        b.reference,
-        b.checkedIn ? "YES" : "NO",
-      ]),
-    ];
-
-    const csv = rows.map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv]);
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "attendees.csv";
-    link.click();
-  };
-
   return (
-    <div className="p-6 text-white">
-      <h1 className="text-3xl mb-4">Admin Dashboard</h1>
-      <button onClick={exportCSV} className="bg-gold px-4 py-2 mb-4">
-        Export CSV
-      </button>
+    <div>
+      <h1 className="text-3xl text-gold mb-6">Dashboard</h1>
 
-      <p>Total Bookings: {data.length}</p>
-      <p>Checked In: {data.filter(b => b.checkedIn).length}</p>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="bg-black/60 p-6 rounded">
+          <p>Total Bookings</p>
+          <h2 className="text-3xl">{stats.total}</h2>
+        </div>
+
+        <div className="bg-black/60 p-6 rounded">
+          <p>Checked In</p>
+          <h2 className="text-3xl">{stats.checkedIn}</h2>
+        </div>
+      </div>
     </div>
   );
 }

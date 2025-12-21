@@ -1,6 +1,8 @@
 import "./globals.css";
 import "./globals.css";
 import { ReactNode } from "react";
+import "./globals.css";
+import floatinglantern2 from "@/components/floatinglantern2";
 
 
 export const metadata = {
@@ -16,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="relative text-white">
-
+      
         {/* GLOBAL BACKGROUND IMAGE */}
         <div
           className="fixed inset-0 -z-20"

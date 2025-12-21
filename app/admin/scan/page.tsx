@@ -1,76 +1,118 @@
 "use client";
 
-import { useState } from "react";
-import { Scanner, IDetectedBarcode } from "@yudiel/react-qr-scanner";
+import { Html5QrcodeScanner } from "html5-qrcode";
+import jsQR from "jsqr";
+import { useEffect, useRef, useState } from "react";
 
 export default function AdminScanPage() {
-  const [result, setResult] = useState<any>(null);
-  const [message, setMessage] = useState("Scan a ticket QR");
-  const [scanning, setScanning] = useState(true);
+  const scannerRef = useRef<any>(null);
+  const [reference, setReference] = useState("");
+  const [message, setMessage] = useState("");
+  const [fileRef, setFileRef] = useState<string | null>(null);
 
-  const handleScan = async (detectedCodes: IDetectedBarcode[]) => {
-    if (!scanning) return;
-    if (!detectedCodes || detectedCodes.length === 0) return;
+  useEffect(() => {
+    scannerRef.current = new Html5QrcodeScanner(
+      "qr-reader",
+      { fps: 10, qrbox: 250 },
+      false
+    );
 
-    const rawValue = detectedCodes[0].rawValue;
-    if (!rawValue) return;
+    scannerRef.current.render(onScanSuccess, () => {});
+    return () => scannerRef.current.clear();
+  }, []);
 
-    setScanning(false); // 🔒 stop multiple scans
+  async function verify(ref: string) {
+    if (!ref) return;
 
+    const res = await fetch("/api/admin/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ reference: ref }),
+    });
+
+    const data = await res.json();
+    setMessage(data.message);
+  }
+
+  function onScanSuccess(decodedText: string) {
     try {
-      const payload = JSON.parse(rawValue);
-
-      const res = await fetch("/api/admin/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: payload.bookingId }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMessage(data.message || "Invalid ticket");
-        setTimeout(() => setScanning(true), 3000);
-        return;
-      }
-
-      setResult(data);
-      setMessage("✅ Entry Allowed");
+      const parsed = JSON.parse(decodedText);
+      verify(parsed.reference);
     } catch {
-      setMessage("Invalid QR code");
-      setTimeout(() => setScanning(true), 3000);
+      verify(decodedText);
     }
+  }
+
+  /* IMAGE / PDF UPLOAD */
+  const handleFile = async (file: File) => {
+    const buffer = await file.arrayBuffer();
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const qr = jsQR(imageData.data, imageData.width, imageData.height);
+
+      if (qr) {
+        try {
+          const parsed = JSON.parse(qr.data);
+          setFileRef(parsed.reference);
+        } catch {
+          setFileRef(qr.data);
+        }
+      } else {
+        setMessage("QR not detected in file");
+      }
+    };
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
-      <h1 className="text-3xl font-bold text-gold mb-6">
-        🎟 Admin Entry Scan
-      </h1>
+    <div>
+      <h1 className="text-3xl text-gold mb-6">QR Scan</h1>
 
-      <div className="w-full max-w-sm bg-white rounded-lg overflow-hidden">
-        <Scanner
-          onScan={handleScan}
-          onError={(error) => console.error(error)}
-          constraints={{ facingMode: "environment" }}
-          styles={{
-            container: { width: "100%" },
-            video: { width: "100%" },
-          }}
+      {/* CAMERA SCAN (AUTO VERIFY) */}
+      <div id="qr-reader" className="mb-6" />
+
+      {/* MANUAL VERIFY */}
+      <div className="mb-4 flex gap-2">
+        <input
+          placeholder="Enter Reference ID"
+          value={reference}
+          onChange={(e) => setReference(e.target.value)}
+          className="p-2 bg-black border border-white/20"
         />
+        <button
+          onClick={() => verify(reference)}
+          className="bg-gold px-4 py-2 text-black rounded"
+        >
+          Verify
+        </button>
       </div>
 
-      <p className="mt-6 text-lg">{message}</p>
+      {/* FILE UPLOAD */}
+      <div className="mb-4 flex gap-2">
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          onChange={(e) => e.target.files && handleFile(e.target.files[0])}
+        />
+        <button
+          onClick={() => verify(fileRef || "")}
+          disabled={!fileRef}
+          className="bg-gold px-4 py-2 text-black rounded disabled:opacity-50"
+        >
+          Verify Uploaded File
+        </button>
+      </div>
 
-      {result && (
-  <div className="mt-4 bg-green-500 text-black p-4 rounded-lg text-center">
-    <p><b>Name:</b> {result.name}</p>
-    <p><b>Pass:</b> {result.pass}</p>
-    <p><b>Quantity:</b> {result.quantity}</p>
-    <p><b>Reference:</b> {result.reference}</p>
-  </div>
-)}
-
+      {message && <p className="mt-4 text-gold">{message}</p>}
     </div>
   );
 }

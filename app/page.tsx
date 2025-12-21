@@ -31,11 +31,11 @@ export default function App() {
           <motion.img
             src="/logo.png"
             alt="The Red Carpet Logo"
-            className="w-60 mb-6 z-10"
+            className="w-120 mb-12 z-20 animate-fadeInScale"
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
-          />
+                       />
 
           <motion.h1
             className="text-5xl md:text-7xl font-bold text-gold z-10"
@@ -72,6 +72,7 @@ export default function App() {
             Reserve Your Entry
           </motion.a>
         </section>
+        
 
         {/* EVENT LINEUP */}
         <section className="py-24 px-6 bg-black">
