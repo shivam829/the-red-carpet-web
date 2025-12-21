@@ -2,14 +2,15 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
 import connectDB from "@/lib/db";
-import User from "@/models/User";
 import Booking from "@/models/Booking";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const token = req.headers.get("cookie")?.split("auth_token=")[1]?.split(";")[0];
+    await connectDB();
 
+    const token = cookies().get("auth_token")?.value;
     if (!token) {
       return NextResponse.json(
         { success: false, message: "Not authenticated" },
@@ -19,20 +20,10 @@ export async function GET(req: Request) {
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
-    await connectDB();
-    
-    const user = await User.findById(decoded.userId).populate("bookings");
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    // Get all bookings for this user
-    const bookings = await Booking.find({ phone: user.phone })
-      .where("status").equals("PAID")
+    const bookings = await Booking.find({
+      userId: decoded.userId,
+      status: "PAID",
+    })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -40,7 +31,7 @@ export async function GET(req: Request) {
       success: true,
       bookings,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("FETCH BOOKINGS ERROR:", error);
     return NextResponse.json(
       { success: false, message: "Failed to fetch bookings" },

@@ -4,6 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
 import dbConnect from "@/lib/db";
 import Booking from "@/models/Booking";
 import Pass from "@/models/Pass";
@@ -26,16 +28,31 @@ export async function POST(req: Request) {
       );
     }
 
-    const pass = await Pass.findOne({ _id: passId } as any);
+    const pass = await Pass.findById(passId);
     if (!pass) {
       return NextResponse.json({ error: "Pass not found" }, { status: 404 });
     }
 
     const totalAmount = pass.price * quantity;
 
+    /* ------------------ GET USER FROM COOKIE ------------------ */
+    let userId: any = undefined;
+
+    try {
+      const token = cookies().get("auth_token")?.value;
+      if (token) {
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+        userId = decoded.userId;
+      }
+    } catch {
+      userId = undefined;
+    }
+
+    /* ------------------ CREATE BOOKING ------------------ */
     const booking = await Booking.create({
+      userId, // ✅ FIX
       passId: pass._id,
-      passName: pass.name, // ADD THIS LINE
+      passName: pass.name,
       name,
       email,
       phone,
@@ -45,6 +62,7 @@ export async function POST(req: Request) {
       reference: crypto.randomBytes(6).toString("hex").toUpperCase(),
     });
 
+    /* ------------------ CREATE RAZORPAY ORDER ------------------ */
     const order = await razorpay.orders.create({
       amount: totalAmount * 100,
       currency: "INR",
