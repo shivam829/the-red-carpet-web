@@ -26,7 +26,8 @@ export async function POST(req: Request) {
       email === process.env.ADMIN_EMAIL &&
       password === process.env.ADMIN_PASSWORD
     ) {
-      let admin = await Admin.findOne({ email: email });
+      let admin = await Admin.findOne({ email }).exec();
+
 
       if (!admin) {
         admin = await Admin.create({

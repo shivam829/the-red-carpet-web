@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcryptjs";
 
 export interface IAdmin extends Document {
@@ -7,7 +7,7 @@ export interface IAdmin extends Document {
   role: "SUPER" | "STAFF";
 }
 
-const AdminSchema = new Schema(
+const AdminSchema = new Schema<IAdmin>(
   {
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
@@ -20,5 +20,8 @@ const AdminSchema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Admin ||
+const Admin: Model<IAdmin> =
+  mongoose.models.Admin as Model<IAdmin> ||
   mongoose.model<IAdmin>("Admin", AdminSchema);
+
+export default Admin;
