@@ -1,4 +1,6 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
@@ -34,5 +36,9 @@ export async function GET() {
     }
   }
 
+  console.log("MONGO URI:", process.env.MONGODB_URI);
+console.log("PASS COUNT:", await Pass.countDocuments());
   return NextResponse.json(passes);
+  
+
 }

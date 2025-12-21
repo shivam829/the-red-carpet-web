@@ -4,6 +4,11 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ✅ ALWAYS allow API routes (CRITICAL)
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   // ✅ Allow admin login page always
   if (pathname === "/admin/login") {
     return NextResponse.next();
