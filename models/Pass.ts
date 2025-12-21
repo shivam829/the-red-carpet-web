@@ -6,6 +6,13 @@ const PassSchema = new Schema(
     price: Number,
     phase: Number,
     visible: Boolean,
+
+    // ✅ NEW
+    remainingCount: {
+      type: Number,
+      required: true,
+      default: 590,
+    },
   },
   { timestamps: true }
 );

@@ -11,30 +11,28 @@ declare global {
 
 export default function Passes() {
   const [passes, setPasses] = useState<any[]>([]);
+  const [totalRemaining, setTotalRemaining] = useState(0);
   const [selectedPass, setSelectedPass] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
-    // Load passes
     fetch("/api/passes")
       .then((res) => res.json())
-      .then(setPasses)
+      .then((data) => {
+        setPasses(data);
+        const total = data.reduce(
+          (sum: number, p: any) => sum + (p.remainingCount || 0),
+          0
+        );
+        setTotalRemaining(total);
+      })
       .catch(() => setPasses([]));
 
-    // ✅ FIX: include cookies
-    fetch("/api/auth/me", {
-      credentials: "include",
-    })
+    fetch("/api/auth/me", { credentials: "include" })
       .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      })
+      .then((data) => setUser(data.success ? data.user : null))
       .catch(() => setUser(null));
   }, []);
 
@@ -115,9 +113,18 @@ export default function Passes() {
   return (
     <>
       <section id="passes" className="py-24 px-6 bg-black/60">
-        <h2 className="text-4xl font-bold text-gold text-center mb-12">
+        <h2 className="text-4xl font-bold text-gold text-center mb-6">
           Passes
         </h2>
+
+        {/* ✅ TOTAL AVAILABLE BANNER */}
+        <div className="text-center mb-10">
+          <div className="inline-block bg-red-900/80 border border-gold px-8 py-4 rounded-2xl">
+            <p className="text-xl font-bold text-gold">
+              🎟️ Available Passes: {totalRemaining}
+            </p>
+          </div>
+        </div>
 
         {showAuthPrompt && (
           <div className="fixed top-24 right-4 bg-red-900 border border-red-500 text-white px-6 py-4 rounded-lg shadow-xl z-50">
@@ -134,17 +141,43 @@ export default function Passes() {
               <h3 className="text-2xl font-bold text-gold mb-2">
                 {pass.name}
               </h3>
+
+              <p className="text-gray-300 mb-1">
+                Available:{" "}
+                <span className="text-gold font-semibold">
+                  {pass.remainingCount}
+                </span>
+              </p>
+
               <p className="text-xl mb-4">₹{pass.price}</p>
 
               <button
-                disabled={loading}
+                disabled={loading || pass.remainingCount <= 0}
                 onClick={() => handleBookNowClick(pass)}
-                className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition"
+                className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition disabled:opacity-50"
               >
-                {loading ? "Processing..." : "Book Now"}
+                {pass.remainingCount <= 0 ? "Sold Out" : "Book Now"}
               </button>
             </div>
           ))}
+        </div>
+
+        {/* ✅ DISTRICT APP CTA */}
+        <div className="mt-16 flex justify-center">
+          <a
+            href="https://www.district.in/events/the-red-carpet-bhopals-grandest-new-year-celebration-dec31-2025-buy-tickets"
+            target="_blank"
+            className="flex items-center gap-4 border border-gold px-8 py-4 rounded-xl hover:bg-white/10 transition"
+          >
+            <span className="text-lg font-semibold text-white">
+              Book your passes on District App
+            </span>
+            <img
+              src="/download.jpg"
+              alt="District App"
+              className="w-10 h-10 object-contain"
+            />
+          </a>
         </div>
       </section>
 

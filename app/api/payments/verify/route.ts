@@ -9,6 +9,7 @@ import Booking from "@/models/Booking";
 import User from "@/models/User";
 import QRCode from "qrcode";
 import { cookies } from "next/headers";
+import Pass from "@/models/Pass";
 
 export async function POST(req: Request) {
   try {
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
       );
     }
 
-    /* ---------- ENV SAFETY (CRITICAL) ---------- */
+    /* ---------- ENV SAFETY ---------- */
     if (!process.env.RAZORPAY_KEY_SECRET) {
       console.error("RAZORPAY_KEY_SECRET is missing");
       return NextResponse.json(
@@ -88,6 +89,22 @@ export async function POST(req: Request) {
     booking.paymentId = razorpay_payment_id;
     booking.orderId = razorpay_order_id;
     booking.paidAt = new Date();
+
+    /* ---------- REDUCE PASS COUNT (CRITICAL) ---------- */
+    try {
+      const pass = await Pass.findById(booking.passId);
+
+      if (pass) {
+        pass.remainingCount = Math.max(
+          pass.remainingCount - booking.quantity,
+          0
+        );
+        await pass.save();
+      }
+    } catch (passErr) {
+      console.error("Pass count update failed:", passErr);
+      // ❌ Do NOT fail payment because of count
+    }
 
     /* ---------- QR (NON-BLOCKING) ---------- */
     try {
