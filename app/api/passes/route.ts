@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Pass from "@/models/Pass";
 
+
+
 export async function GET() {
   await dbConnect();
 
