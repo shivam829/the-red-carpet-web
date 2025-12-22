@@ -64,4 +64,48 @@ html {
     border-radius: 20px !important;
     padding: 24px !important;
   }
+  @media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .ticket-card,
+  .ticket-card * {
+    visibility: visible;
+  }
+
+  .ticket-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    box-shadow: none !important;
+  }
+}  @media print {
+  .ticket-actions {
+    display: none !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .ticket-card,
+  .ticket-card * {
+    visibility: visible !important;
+  }
+
+  .ticket-card {
+    position: fixed !important;
+    inset: 0 !important;
+    margin: auto !important;
+    max-width: 420px !important;
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+}
+
+
+ 
 }

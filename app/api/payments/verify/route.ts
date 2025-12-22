@@ -134,6 +134,15 @@ export async function POST(req: Request) {
     } catch (userErr) {
       console.error("User linking failed (ignored):", userErr);
     }
+        // 💰 STORE PAYMENT BREAKDOWN (CRITICAL FOR RECEIPT)
+    if (!booking.baseAmount || !booking.bookingFee) {
+      const baseAmount = Math.round(booking.amount / 1.03);
+      booking.baseAmount = baseAmount;
+      booking.bookingFee = booking.amount - baseAmount;
+    }
+
+    booking.discount = booking.discount ?? 0;
+    booking.paymentMode = "Razorpay";
 
     await booking.save();
 

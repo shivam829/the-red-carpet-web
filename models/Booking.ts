@@ -8,16 +8,28 @@ export interface IBooking extends Document {
   email: string;
   phone: string;
   quantity: number;
-  amount: number;
+
+  // 💰 Payment
+  amount: number;           // total paid
+  baseAmount?: number;      // base price
+  bookingFee?: number;      // 3% charge
+  discount?: number;        // future-ready
+  paymentMode?: string;     // Razorpay
+
   reference: string;
-  qrCode?: string;
+
+  // Razorpay
   razorpayOrderId?: string;
   paymentId?: string;
   orderId?: string;
   paidAt?: Date;
+
+  qrCode?: string;
+
   status: "PENDING" | "PAID" | "FAILED";
   isUsed: boolean;
   usedAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,23 +43,33 @@ const BookingSchema = new Schema<IBooking>(
     email: { type: String, required: true },
     phone: { type: String, required: true },
     quantity: { type: Number, required: true },
+
     amount: { type: Number, required: true },
+    baseAmount: Number,
+    bookingFee: Number,
+    discount: { type: Number, default: 0 },
+    paymentMode: String,
+
     reference: { type: String, required: true, unique: true },
+
     qrCode: String,
+
     razorpayOrderId: String,
     paymentId: String,
     orderId: String,
     paidAt: Date,
+
     status: {
       type: String,
       enum: ["PENDING", "PAID", "FAILED"],
       default: "PENDING",
     },
+
     isUsed: { type: Boolean, default: false },
     usedAt: Date,
   },
   { timestamps: true }
 );
 
-// ✅ Vercel-safe pattern: no generics on model
-export default mongoose.models.Booking || mongoose.model("Booking", BookingSchema);
+export default mongoose.models.Booking ||
+  mongoose.model("Booking", BookingSchema);
