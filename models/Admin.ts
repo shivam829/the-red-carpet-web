@@ -1,10 +1,11 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
-import bcrypt from "bcryptjs";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IAdmin extends Document {
   email: string;
   password: string;
   role: "SUPER" | "STAFF";
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const AdminSchema = new Schema<IAdmin>(
@@ -20,8 +21,5 @@ const AdminSchema = new Schema<IAdmin>(
   { timestamps: true }
 );
 
-const Admin: Model<IAdmin> =
-  mongoose.models.Admin as Model<IAdmin> ||
-  mongoose.model<IAdmin>("Admin", AdminSchema);
-
-export default Admin;
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.Admin || mongoose.model("Admin", AdminSchema);

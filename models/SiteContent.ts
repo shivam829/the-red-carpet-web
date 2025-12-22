@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface SiteContentDocument extends Document {
   heroTitle: string;
@@ -6,18 +6,20 @@ export interface SiteContentDocument extends Document {
   eventDescription: string;
   backgroundImage: string;
   animationsEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const SiteContentSchema = new Schema<SiteContentDocument>({
-  heroTitle: String,
-  heroSubtitle: String,
-  eventDescription: String,
-  backgroundImage: String,
-  animationsEnabled: Boolean,
-});
+const SiteContentSchema = new Schema<SiteContentDocument>(
+  {
+    heroTitle: String,
+    heroSubtitle: String,
+    eventDescription: String,
+    backgroundImage: String,
+    animationsEnabled: Boolean,
+  },
+  { timestamps: true }
+);
 
-const SiteContent: Model<SiteContentDocument> =
-  mongoose.models.SiteContent ||
-  mongoose.model<SiteContentDocument>("SiteContent", SiteContentSchema);
-
-export default SiteContent;
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.SiteContent || mongoose.model("SiteContent", SiteContentSchema);

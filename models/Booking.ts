@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IBooking extends Document {
   userId?: mongoose.Types.ObjectId;
@@ -13,7 +13,6 @@ export interface IBooking extends Document {
   qrCode?: string;
   razorpayOrderId?: string;
   paymentId?: string;
-   // ✅ ADD THESE
   orderId?: string;
   paidAt?: Date;
   status: "PENDING" | "PAID" | "FAILED";
@@ -37,6 +36,8 @@ const BookingSchema = new Schema<IBooking>(
     qrCode: String,
     razorpayOrderId: String,
     paymentId: String,
+    orderId: String,
+    paidAt: Date,
     status: {
       type: String,
       enum: ["PENDING", "PAID", "FAILED"],
@@ -48,8 +49,5 @@ const BookingSchema = new Schema<IBooking>(
   { timestamps: true }
 );
 
-const Booking: Model<IBooking> =
-  (mongoose.models.Booking as Model<IBooking>) ||
-  mongoose.model<IBooking>("Booking", BookingSchema);
-
-export default Booking;
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.Booking || mongoose.model("Booking", BookingSchema);

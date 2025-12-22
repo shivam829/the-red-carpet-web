@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IUser extends Document {
   name?: string;
@@ -15,13 +15,11 @@ const UserSchema = new Schema<IUser>(
     name: String,
     phone: { type: String, required: true, unique: true },
     email: String,
+    password: String,
     bookings: [{ type: Schema.Types.ObjectId, ref: "Booking" }],
   },
   { timestamps: true }
 );
 
-const User: Model<IUser> =
-  (mongoose.models.User as Model<IUser>) ||
-  mongoose.model<IUser>("User", UserSchema);
-
-export default User;
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.User || mongoose.model("User", UserSchema);
