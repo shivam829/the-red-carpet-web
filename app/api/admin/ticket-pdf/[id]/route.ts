@@ -4,7 +4,9 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Booking from "@/models/Booking";
+import { generateTicketPDF } from "@/lib/generateTicketPDF";
 import { generateReceiptPDF } from "@/lib/generateReceiptPDF";
+import { verifyAdmin } from "@/lib/adminAuth";
 import PDFDocument from "pdfkit";
 
 export async function GET(
@@ -12,24 +14,29 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    verifyAdmin();
     await connectDB();
 
     const booking: any = await Booking.findById(params.id).lean();
 
     if (!booking || booking.status !== "PAID") {
       return NextResponse.json(
-        { message: "Receipt not available" },
+        { message: "Ticket not available" },
         { status: 404 }
       );
     }
 
-    // ✅ Create PDF document
+    // ✅ CREATE ONE PDF
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     const buffers: Buffer[] = [];
 
     doc.on("data", (chunk) => buffers.push(chunk));
 
-    // 🧾 Generate receipt into this doc
+    // 🎟 PAGE 1 — PASS
+    await generateTicketPDF(booking, doc);
+
+    // 🧾 PAGE 2 — RECEIPT
+    doc.addPage();
     await generateReceiptPDF(booking, doc);
 
     doc.end();
@@ -39,16 +46,16 @@ export async function GET(
     return new Response(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=Receipt-${booking.reference}.pdf`,
+        "Content-Disposition": `attachment; filename=Pass+Receipt-${booking.reference}.pdf`,
         "Content-Length": pdfBuffer.length.toString(),
         "Cache-Control": "no-store",
       },
     });
   } catch (err) {
-    console.error("RECEIPT PDF ERROR:", err);
+    console.error("ADMIN PDF DOWNLOAD ERROR:", err);
     return NextResponse.json(
-      { message: "Failed to generate receipt" },
-      { status: 500 }
+      { message: "Unauthorized" },
+      { status: 401 }
     );
   }
 }

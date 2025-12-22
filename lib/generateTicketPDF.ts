@@ -7,21 +7,14 @@ import PDFDocument from "pdfkit";
  * - quantity
  * - baseAmount
  * - bookingFee
- * - amount (final amount paid)
+ * - amount
  * - reference
  * - qrCode (base64 data URL)
  */
-export async function generateTicketPDF(booking: any) {
-  const doc = new PDFDocument({
-    size: "A4",
-    margin: 50,
-  });
-
-  const buffers: Buffer[] = [];
-
-  doc.on("data", (chunk) => buffers.push(chunk));
-  doc.on("end", () => {});
-
+export async function generateTicketPDF(
+  booking: any,
+  doc: PDFDocument
+) {
   /* ------------------ HEADER ------------------ */
 
   doc
@@ -72,9 +65,7 @@ export async function generateTicketPDF(booking: any) {
 
   doc
     .fontSize(13)
-    .text(`Reference Code: ${booking.reference}`, {
-      bold: true,
-    });
+    .text(`Reference Code: ${booking.reference}`);
 
   doc.moveDown(2);
 
@@ -90,9 +81,7 @@ export async function generateTicketPDF(booking: any) {
 
     doc
       .fontSize(14)
-      .text("Scan this QR code at entry:", {
-        align: "left",
-      });
+      .text("Scan this QR code at entry:");
 
     doc.moveDown(1);
 
@@ -122,7 +111,5 @@ export async function generateTicketPDF(booking: any) {
       }
     );
 
-  doc.end();
-
-  return Buffer.concat(buffers);
+  // ❌ DO NOT call doc.end() here
 }

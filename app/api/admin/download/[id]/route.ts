@@ -1,35 +1,45 @@
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import dbConnect from "@/lib/db";
 import Booking from "@/models/Booking";
-import { generateReceiptPDF } from "@/lib/generateReceiptPDF";
+import { verifyAdmin } from "@/lib/adminAuth";
 import PDFDocument from "pdfkit";
+import { generateTicketPDF } from "@/lib/generateTicketPDF";
+import { generateReceiptPDF } from "@/lib/generateReceiptPDF";
 
 export async function GET(
   _: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB();
+    // 🔐 ADMIN AUTH CHECK
+    verifyAdmin();
+
+    await dbConnect();
 
     const booking: any = await Booking.findById(params.id).lean();
 
     if (!booking || booking.status !== "PAID") {
       return NextResponse.json(
-        { message: "Receipt not available" },
+        { message: "Invalid or unpaid booking" },
         { status: 404 }
       );
     }
 
-    // ✅ Create PDF document
+    /* 📄 PDF SETUP */
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     const buffers: Buffer[] = [];
 
-    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("data", (b) => buffers.push(b));
+    doc.on("end", () => {});
 
-    // 🧾 Generate receipt into this doc
+    /* 🎟 PASS PAGE */
+    await generateTicketPDF(booking, doc);
+
+    /* 🧾 RECEIPT PAGE */
+    doc.addPage();
     await generateReceiptPDF(booking, doc);
 
     doc.end();
@@ -39,16 +49,16 @@ export async function GET(
     return new Response(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=Receipt-${booking.reference}.pdf`,
+        "Content-Disposition": `attachment; filename=Ticket-${booking.reference}.pdf`,
         "Content-Length": pdfBuffer.length.toString(),
         "Cache-Control": "no-store",
       },
     });
   } catch (err) {
-    console.error("RECEIPT PDF ERROR:", err);
+    console.error("ADMIN DOWNLOAD ERROR:", err);
     return NextResponse.json(
-      { message: "Failed to generate receipt" },
-      { status: 500 }
+      { message: "Unauthorized" },
+      { status: 401 }
     );
   }
 }
