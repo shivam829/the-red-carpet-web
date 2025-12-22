@@ -1,5 +1,6 @@
 "use client";
 export const dynamic = "force-dynamic";
+import Link from "next/link";
 
 import { motion } from "framer-motion";
 import FloatingLanterns from "@/components/FloatingLanterns";
@@ -140,6 +141,13 @@ export default function App() {
 
         {/* EVENT MAP */}
         <LayoutMap />
+
+        <Link href="/events/red-carpet-nye-2025">
+  <button className="px-4 py-2 border border-gold text-gold rounded-lg">
+    View Event Details
+  </button>
+</Link>
+
 
         {/* FOOTER */}
         <footer className="py-12 px-6 text-center text-gray-300 bg-black/90 border-t border-gold/20">

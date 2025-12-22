@@ -35,11 +35,14 @@ export default function LoginModal({
       const data = await res.json();
 
       if (data.success) {
-        onSuccess(data.user);
-        onClose();
-      } else {
-        setError(data.message || "Login failed");
-      }
+  if (data.redirect) {
+    window.location.href = data.redirect;
+    return;
+  }
+
+  onSuccess(data.user);
+  onClose();
+}
     } catch {
       setError("Something went wrong");
     } finally {
