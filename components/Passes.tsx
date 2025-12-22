@@ -55,7 +55,7 @@ useEffect(() => {
   };
 
   fetchPasses();
-  interval = setInterval(fetchPasses, 5000);
+  interval = setInterval(fetchPasses, 15000);
 
   return () => {
     mounted = false;
