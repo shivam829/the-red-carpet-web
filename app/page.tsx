@@ -107,7 +107,7 @@ export default function App() {
           <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
             {[
               { title: "Live DJs & EDM", video: "/techno-dj.mp4" },
-              { title: "Fire Performers", video: "/fire-performers.mp4" },
+              { title: "Fire Performers", video: "/fire-Performers.mp4" },
               { title: "Midnight Fireworks", video: "/fireworks.mp4" },
             ].map((item) => (
               <motion.div
