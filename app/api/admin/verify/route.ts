@@ -11,26 +11,31 @@ export async function POST(req: Request) {
     const { reference }: { reference: string } = await req.json();
 
     if (!reference) {
-      return NextResponse.json(
-        { success: false, message: "Reference required" },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: false,
+        status: "INVALID",
+        message: "Reference required",
+      });
     }
 
-    const booking = await Booking.findOne({ reference }).exec();
+    // ✅ NO lean() → real Mongoose document
+    const booking = await Booking.findOne({ reference });
 
     if (!booking) {
-      return NextResponse.json(
-        { success: false, message: "Invalid ticket" },
-        { status: 404 }
-      );
+      return NextResponse.json({
+        success: false,
+        status: "INVALID",
+        message: "Invalid ticket",
+      });
     }
 
     if (booking.isUsed) {
-      return NextResponse.json(
-        { success: false, message: "Ticket already used" },
-        { status: 409 }
-      );
+      return NextResponse.json({
+        success: false,
+        status: "USED",
+        message: "Ticket already used",
+        booking,
+      });
     }
 
     booking.isUsed = true;
@@ -39,14 +44,16 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Entry verified successfully",
+      status: "VALID",
+      message: "Entry verified",
       booking,
     });
   } catch (err) {
     console.error("ADMIN VERIFY ERROR:", err);
-    return NextResponse.json(
-      { success: false, message: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({
+      success: false,
+      status: "INVALID",
+      message: "Unauthorized",
+    });
   }
 }

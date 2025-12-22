@@ -4,16 +4,22 @@ import { Html5QrcodeScanner } from "html5-qrcode";
 import jsQR from "jsqr";
 import { useEffect, useRef, useState } from "react";
 
+type ResultState = {
+  status: "VALID" | "USED" | "INVALID";
+  message: string;
+  booking?: any;
+};
+
 export default function AdminScanPage() {
   const scannerRef = useRef<any>(null);
   const [reference, setReference] = useState("");
-  const [message, setMessage] = useState("");
   const [fileRef, setFileRef] = useState<string | null>(null);
+  const [result, setResult] = useState<ResultState | null>(null);
 
   useEffect(() => {
     scannerRef.current = new Html5QrcodeScanner(
       "qr-reader",
-      { fps: 10, qrbox: 250 },
+      { fps: 10, qrbox: 260 },
       false
     );
 
@@ -32,7 +38,10 @@ export default function AdminScanPage() {
     });
 
     const data = await res.json();
-    setMessage(data.message);
+    setResult(data);
+
+    // Auto reset after animation
+    setTimeout(() => setResult(null), 3000);
   }
 
   function onScanSuccess(decodedText: string) {
@@ -44,9 +53,8 @@ export default function AdminScanPage() {
     }
   }
 
-  /* IMAGE / PDF UPLOAD */
+  /* FILE UPLOAD */
   const handleFile = async (file: File) => {
-    const buffer = await file.arrayBuffer();
     const img = new Image();
     img.src = URL.createObjectURL(file);
 
@@ -68,19 +76,21 @@ export default function AdminScanPage() {
           setFileRef(qr.data);
         }
       } else {
-        setMessage("QR not detected in file");
+        setResult({
+          status: "INVALID",
+          message: "QR not detected in file",
+        });
+        setTimeout(() => setResult(null), 3000);
       }
     };
   };
 
   return (
-    <div>
-      <h1 className="text-3xl text-gold mb-6">QR Scan</h1>
+    <div className="relative min-h-screen p-6 bg-black text-white">
+      <h1 className="text-3xl text-gold mb-6">QR Verification</h1>
 
-      {/* CAMERA SCAN (AUTO VERIFY) */}
       <div id="qr-reader" className="mb-6" />
 
-      {/* MANUAL VERIFY */}
       <div className="mb-4 flex gap-2">
         <input
           placeholder="Enter Reference ID"
@@ -96,7 +106,6 @@ export default function AdminScanPage() {
         </button>
       </div>
 
-      {/* FILE UPLOAD */}
       <div className="mb-4 flex gap-2">
         <input
           type="file"
@@ -112,7 +121,35 @@ export default function AdminScanPage() {
         </button>
       </div>
 
-      {message && <p className="mt-4 text-gold">{message}</p>}
+      {/* 🔥 RESULT OVERLAY */}
+      {result && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center
+          transition-all duration-300
+          ${
+            result.status === "VALID"
+              ? "bg-green-600/90"
+              : "bg-red-600/90"
+          }`}
+        >
+          <div className="text-center animate-scale-in">
+            <h2 className="text-6xl font-bold mb-4">
+              {result.status === "VALID" ? "✅ VALID PASS" : "❌ INVALID"}
+            </h2>
+
+            <p className="text-xl mb-2">{result.message}</p>
+
+            {result.booking && (
+              <div className="mt-4 text-lg space-y-1">
+                <p><b>Name:</b> {result.booking.name}</p>
+                <p><b>Pass:</b> {result.booking.passName}</p>
+                <p><b>Qty:</b> {result.booking.quantity}</p>
+                <p><b>Ref:</b> {result.booking.reference}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
