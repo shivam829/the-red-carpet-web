@@ -1,19 +1,32 @@
 // lib/db.ts
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
 if (!MONGODB_URI) {
   throw new Error("MONGODB_URI not defined");
 }
 
-// ✅ DO NOT use global cache with mongoose v9
+// Global cache (REQUIRED for Vercel)
+let cached = (global as any).mongoose;
+
+if (!cached) {
+  cached = (global as any).mongoose = {
+    conn: null,
+    promise: null,
+  };
+}
+
 export default async function dbConnect() {
-  if (mongoose.connection.readyState >= 1) {
-    return mongoose;
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI, {
+      dbName: "test",
+      bufferCommands: false,
+    });
   }
 
-  return mongoose.connect(MONGODB_URI, {
-    dbName: "test", // 🔴 IMPORTANT
-  });
+  cached.conn = await cached.promise;
+  return cached.conn;
 }
