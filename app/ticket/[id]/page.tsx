@@ -33,99 +33,61 @@ export default function TicketPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-6 print:p-0"
-      style={{
-        backgroundImage: "url('/hero.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      {/* TICKET CARD */}
-      <div
-        className="ticket-card relative max-w-md w-full rounded-3xl p-6 shadow-2xl text-white print:shadow-none"
-        style={{
-          background:
-            "linear-gradient(135deg, #3b0a0a, #7a1212, #b8860b)",
-        }}
-      >
-        {/* SOFT GLOW OVERLAY */}
-        <div className="absolute inset-0 rounded-3xl bg-black/20 pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="ticket-card max-w-md w-full rounded-3xl p-6 shadow-2xl text-white bg-gradient-to-br from-red-900 to-black">
+        <div className="text-center mb-4">
+          <img src="/logo.png" className="h-14 mx-auto mb-2" />
+          <h1 className="text-xl font-bold">THE RED CARPET</h1>
+          <p className="text-sm opacity-80">Official Entry Pass</p>
+        </div>
 
-        <div className="relative z-10 text-center">
-          {/* LOGO + TITLE (FIXED ALIGNMENT) */}
-          <div className="flex flex-col items-center mb-4">
-            <img
-              src="/logo.png"
-              alt="The Red Carpet Logo"
-              className="h-16 mb-2"
-            />
+        <div className="space-y-1 mb-4 text-sm">
+          <p><b>Name:</b> {ticket.name}</p>
+          <p><b>Pass:</b> {ticket.passName}</p>
+          <p><b>Quantity:</b> {ticket.quantity}</p>
+          <p><b>Reference:</b> {ticket.reference}</p>
+        </div>
 
-            <h1 className="text-2xl font-bold tracking-wide">
-              THE RED CARPET
-            </h1>
-            <p className="text-sm tracking-widest opacity-90">
-              NEW YEAR EVE
-            </p>
-          </div>
+        {/* PAYMENT SUMMARY */}
+<div className="bg-black/40 rounded-xl p-4 mb-4 text-sm">
+  <h3 className="text-gold font-semibold mb-2">Payment Summary</h3>
 
-          <p className="text-sm opacity-90 mb-5">
-            Official Entry Pass
-          </p>
+  <p>
+    Base Amount: ₹{ticket.baseAmount ?? 0}
+  </p>
 
-          {/* DETAILS */}
-          <div className="space-y-1 text-base mb-5">
-            <p><b>Name:</b> {ticket.name}</p>
-            <p><b>Pass:</b> {ticket.passName}</p>
-            <p><b>Quantity:</b> {ticket.quantity}</p>
-            <p><b>Reference:</b> {ticket.reference}</p>
-          </div>
+  <p>
+    Booking Fee (3%): ₹{ticket.bookingFee ?? 0}
+  </p>
 
-          {/* QR CODE */}
-          <div className="my-6 flex justify-center">
-            <div className="bg-white p-3 rounded-xl">
-              <img
-                src={ticket.qrCode}
-                alt="QR Code"
-                className="w-44 h-44"
-              />
-            </div>
-          </div>
+  <p className="font-bold text-gold">
+    Total Paid: ₹{ticket.amount ?? 0}
+  </p>
 
-          <p className="text-xs opacity-80 mb-6">
-            Scan this QR code at the venue entrance
-          </p>
+  <p>
+    Status: {ticket.status ?? "PAID"}
+  </p>
+</div>
 
-          {/* ACTIONS */}
-          <div className="space-y-2 print:hidden">
-            <button
-              onClick={() => window.print()}
-              className="w-full bg-black py-3 rounded-lg font-medium"
-            >
-              Print / Save as PDF
-            </button>
 
-            <button
-              className="w-full bg-white/90 text-black py-2 rounded-lg"
-              onClick={() => alert("Email sending will be enabled soon")}
-            >
-              Send to Email
-            </button>
+        <div className="flex justify-center my-4">
+          <img src={ticket.qrCode} className="w-40 h-40 bg-white p-2 rounded" />
+        </div>
 
-            <button
-              className="w-full bg-white/90 text-black py-2 rounded-lg"
-              onClick={() => alert("WhatsApp sending will be enabled soon")}
-            >
-              Send to WhatsApp
-            </button>
+        <div className="space-y-2">
+          <button
+            onClick={() => window.print()}
+            className="w-full bg-black py-3 rounded-lg"
+          >
+            Print / Save as PDF
+          </button>
 
-            <button
-              onClick={() => window.history.back()}
-              className="w-full border border-white py-2 rounded-lg"
-            >
-              Go Back
-            </button>
-          </div>
+          <button
+            onClick={() => window.history.back()}
+            className="w-full border py-2 rounded-lg"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     </div>

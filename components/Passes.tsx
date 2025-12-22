@@ -59,7 +59,7 @@ export default function Passes() {
     };
   }, []);
 
-  /* ------------------ FETCH USER (FREQUENT CHECKS) ------------------ */
+  /* ------------------ FETCH USER ------------------ */
   useEffect(() => {
     let mounted = true;
     let interval: any = null;
@@ -74,36 +74,25 @@ export default function Passes() {
         if (res.ok) {
           const data = await res.json();
           if (mounted && data?.success) {
-            console.log("✅ User authenticated:", data.user.name);
             setUser(data.user);
           } else if (mounted) {
-            console.log("❌ User not authenticated");
             setUser(null);
           }
         } else if (mounted) {
           setUser(null);
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
+      } catch {
         if (mounted) setUser(null);
       }
     };
 
-    // 🔥 Check immediately on mount
     checkAuth();
-
-    // 🔥 Check every 3 seconds to detect login changes quickly
     interval = setInterval(checkAuth, 3000);
 
-    // 🔥 Also check when window gains focus (user comes back to tab)
     const handleFocus = () => checkAuth();
-    window.addEventListener("focus", handleFocus);
+    const handleUserLoggedIn = () => checkAuth();
 
-    // 🔥 Listen for manual login event from Header
-    const handleUserLoggedIn = () => {
-      console.log("🔥 Login event received, refreshing user state");
-      checkAuth();
-    };
+    window.addEventListener("focus", handleFocus);
     window.addEventListener("userLoggedIn", handleUserLoggedIn);
 
     return () => {
@@ -115,25 +104,17 @@ export default function Passes() {
   }, []);
 
   const handleBookNowClick = (pass: any) => {
-    console.log("🔍 Book Now clicked", { pass, user });
-    
     if (!user) {
-      console.log("🔍 User not logged in, showing prompt");
       setShowAuthPrompt(true);
       setTimeout(() => setShowAuthPrompt(false), 3000);
       return;
     }
-    
-    console.log("🔍 Opening booking modal");
     setSelectedPass(pass);
   };
 
   const startPayment = async (pass: any, form: any) => {
-    console.log("🔍 Starting payment", { pass, form });
-    
-    // Check if Razorpay is loaded
     if (!window.Razorpay) {
-      alert("Payment system is loading, please try again in a moment.");
+      alert("Payment system is loading, please try again.");
       return;
     }
 
@@ -189,10 +170,9 @@ export default function Passes() {
         },
         theme: { color: "#C9A24D" },
       });
-      
+
       rzp.open();
-    } catch (error) {
-      console.error("Payment error:", error);
+    } catch {
       alert("Payment failed. Please try again.");
     } finally {
       setLoading(false);
@@ -207,12 +187,10 @@ export default function Passes() {
           Passes
         </h2>
 
-        {/* 🔥 IMPROVED: Better styled auth prompt */}
         {showAuthPrompt && (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl shadow-2xl z-50 animate-bounce border-2 border-yellow-400">
             <p className="font-bold text-lg flex items-center gap-2">
-              <span className="text-2xl">⚠️</span>
-              Please login first to book passes
+              ⚠️ Please login first to book passes
             </p>
           </div>
         )}
@@ -248,7 +226,15 @@ export default function Passes() {
                 </span>
               </p>
 
-              <p className="text-xl mb-4">₹{pass.price}</p>
+              {/* BASE PRICE */}
+              <p className="text-xl font-semibold mb-1">
+                ₹{pass.price}
+              </p>
+
+              {/* BOOKING CHARGE NOTE */}
+              <p className="text-sm text-gray-400 mb-4">
+                + 3% booking charge applicable
+              </p>
 
               <button
                 disabled={pass.remainingCount <= 0}
@@ -262,14 +248,10 @@ export default function Passes() {
         </div>
       </section>
 
-      {/* Modal */}
       {selectedPass && (
         <BookingModal
           pass={selectedPass}
-          onClose={() => {
-            console.log("🔍 Closing modal");
-            setSelectedPass(null);
-          }}
+          onClose={() => setSelectedPass(null)}
           onSubmit={(data) => startPayment(selectedPass, data)}
         />
       )}

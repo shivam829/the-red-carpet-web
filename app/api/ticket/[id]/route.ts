@@ -1,49 +1,60 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
-import BookingModel from "@/models/Booking";
-import QRCode from "qrcode";
+import connectDB from "@/lib/db";
+import Booking from "@/models/Booking";
 
 export async function GET(
-  req: Request,
+  _: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    await dbConnect();
-    const Booking = BookingModel as any;
+    await connectDB();
 
-    const booking = await Booking.findById(params.id);
-    if (!booking || booking.status !== "PAID") {
+    // ⛔ Do NOT fight mongoose typings
+    const booking: any = await Booking.findById(params.id).lean();
+
+    if (!booking) {
       return NextResponse.json(
-        { success: false, message: "Ticket not found or unpaid" },
+        { success: false, message: "Ticket not found" },
         { status: 404 }
       );
     }
 
-    // Ensure QR exists (fallback for old bookings)
-    if (!booking.qrCode) {
-      booking.qrCode = await QRCode.toDataURL(
-        JSON.stringify({
-          bookingId: booking._id.toString(),
-          reference: booking.reference,
-        })
-      );
-      await booking.save();
+    // 🔐 Guaranteed values
+    const amount = Number(booking.amount || 0);
+
+    // 🔥 Fallback logic for old bookings
+    let baseAmount = Number(booking.baseAmount || 0);
+    let bookingFee = Number(booking.bookingFee || 0);
+
+    if (baseAmount === 0 && booking.quantity && amount > 0) {
+      // Derive base & fee safely from final amount
+      baseAmount = Math.round(amount / 1.03);
+      bookingFee = amount - baseAmount;
     }
 
     return NextResponse.json({
       success: true,
       ticket: {
+        _id: booking._id?.toString(),
         name: booking.name,
         passName: booking.passName,
         quantity: booking.quantity,
         reference: booking.reference,
+        status: booking.status,
+
+        // 💰 PAYMENT BREAKDOWN (ALWAYS FILLED)
+        baseAmount,
+        bookingFee,
+        amount,
+
         qrCode: booking.qrCode,
+        createdAt: booking.createdAt,
       },
     });
-  } catch (err) {
-    console.error("FETCH TICKET ERROR:", err);
+  } catch (error) {
+    console.error("Ticket fetch error:", error);
     return NextResponse.json(
       { success: false, message: "Failed to load ticket" },
       { status: 500 }

@@ -14,14 +14,12 @@ export default function MyTicketsPage() {
     checkAuth();
   }, []);
 
-  // ✅ FIX 1: auth check must include credentials
   const checkAuth = async () => {
     try {
       const response = await fetch("/api/auth/me", {
-  credentials: "include",
-  cache: "no-store",
-});
-
+        credentials: "include",
+        cache: "no-store",
+      });
 
       const data = await response.json();
 
@@ -32,12 +30,11 @@ export default function MyTicketsPage() {
 
       setUser(data.user);
       await fetchBookings();
-    } catch (error) {
+    } catch {
       router.push("/");
     }
   };
 
-  // ✅ FIX 2: bookings fetch must include credentials
   const fetchBookings = async () => {
     try {
       const response = await fetch("/api/user/bookings", {
@@ -87,10 +84,10 @@ export default function MyTicketsPage() {
               No Tickets Yet
             </h2>
             <p className="text-gray-400 mb-6">
-              You haven't booked any tickets yet. Get your pass now!
+              You haven't booked any tickets yet.
             </p>
             <Link href="/#passes">
-              <button className="bg-gold text-black px-8 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition">
+              <button className="bg-gold text-black px-8 py-3 rounded-lg font-semibold">
                 Browse Passes
               </button>
             </Link>
@@ -100,9 +97,9 @@ export default function MyTicketsPage() {
             {bookings.map((booking) => (
               <div
                 key={booking._id}
-                className="bg-gradient-to-br from-red-900/40 to-black border border-gold/30 rounded-2xl p-6 hover:border-gold/60 transition"
+                className="bg-gradient-to-br from-red-900/40 to-black border border-gold/30 rounded-2xl p-6"
               >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex justify-between mb-4">
                   <h3 className="text-xl font-bold text-gold">
                     {booking.passName}
                   </h3>
@@ -111,19 +108,23 @@ export default function MyTicketsPage() {
                   </span>
                 </div>
 
-                <div className="space-y-2 text-sm text-gray-300 mb-4">
-                  <p><strong>Reference:</strong> {booking.reference}</p>
-                  <p><strong>Quantity:</strong> {booking.quantity} tickets</p>
-                  <p><strong>Amount:</strong> ₹{booking.amount}</p>
+                <div className="space-y-1 text-sm text-gray-300 mb-4">
+                  <p><b>Reference:</b> {booking.reference}</p>
+                  <p><b>Quantity:</b> {booking.quantity}</p>
+                  <p><b>Base Amount:</b> ₹{booking.baseAmount}</p>
+                  <p><b>Booking Fee (3%):</b> ₹{booking.bookingFee}</p>
+                  <p className="text-gold font-semibold">
+                    Total Paid: ₹{booking.amount}
+                  </p>
                   <p>
-                    <strong>Booked on:</strong>{" "}
-                    {new Date(booking.createdAt).toLocaleDateString()}
+                    <b>Booked on:</b>{" "}
+                    {new Date(booking.createdAt).toLocaleString()}
                   </p>
                 </div>
 
                 <div className="flex gap-3">
                   <Link href={`/ticket/${booking._id}`} className="flex-1">
-                    <button className="w-full bg-gold text-black py-3 rounded-lg font-semibold hover:bg-yellow-600 transition">
+                    <button className="w-full bg-gold text-black py-3 rounded-lg font-semibold">
                       View Ticket
                     </button>
                   </Link>
@@ -132,8 +133,7 @@ export default function MyTicketsPage() {
                     onClick={() =>
                       window.open(`/ticket/${booking._id}`, "_blank")
                     }
-                    className="bg-white/10 border border-gold/30 text-white px-4 py-3 rounded-lg hover:bg-white/20 transition"
-                    title="Print"
+                    className="bg-white/10 border border-gold/30 text-white px-4 py-3 rounded-lg"
                   >
                     🖨️
                   </button>
