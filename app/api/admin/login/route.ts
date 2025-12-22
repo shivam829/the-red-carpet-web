@@ -1,87 +1,88 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dbConnect from "@/lib/db";
 import Admin from "@/models/Admin";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
+    console.log("🔍 [ADMIN LOGIN] Starting...");
+    
+    const { email, password } = await req.json();
+    console.log("🔍 [ADMIN LOGIN] Email:", email);
+
     await dbConnect();
+    console.log("✅ [ADMIN LOGIN] DB Connected");
 
-    const { email, password }: { email: string; password: string } =
-      await req.json();
+    // Find admin by email
+    const admin = await Admin.findOne({ email });
+    console.log("🔍 [ADMIN LOGIN] Admin found:", !!admin);
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { success: false, message: "Email and password required" },
-        { status: 400 }
-      );
-    }
-
-    // 🔐 ENV SUPER ADMIN
-    if (
-      email === process.env.ADMIN_EMAIL &&
-      password === process.env.ADMIN_PASSWORD
-    ) {
-      let admin = await Admin.findOne({ email }).exec();
-
-
-      if (!admin) {
-        admin = await Admin.create({
-          email,
-          password: await bcrypt.hash(password, 10),
-          role: "SUPER",
-        });
-      }
-
-      const token = jwt.sign(
-        { adminId: admin._id, role: admin.role },
-        process.env.JWT_ADMIN_SECRET!,
-        { expiresIn: "7d" }
-      );
-
-      const res = NextResponse.json({ success: true });
-      res.cookies.set("admin_token", token, {
-        httpOnly: true,
-        path: "/",
-        sameSite: "lax",
-      });
-
-      return res;
-    }
-
-    // 🔐 DB ADMIN
-    const admin = await Admin.findOne({ email: email });
     if (!admin) {
-      return NextResponse.json({ success: false }, { status: 401 });
+      console.log("❌ [ADMIN LOGIN] Admin not found");
+      return NextResponse.json(
+        { success: false, message: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
-    const valid = await bcrypt.compare(password, admin.password);
-    if (!valid) {
-      return NextResponse.json({ success: false }, { status: 401 });
+    // Compare password
+    const isMatch = await bcrypt.compare(password, admin.password);
+    console.log("🔍 [ADMIN LOGIN] Password match:", isMatch);
+
+    if (!isMatch) {
+      console.log("❌ [ADMIN LOGIN] Password mismatch");
+      return NextResponse.json(
+        { success: false, message: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
+    // Check JWT secret
+    if (!process.env.JWT_ADMIN_SECRET) {
+      console.error("❌ [ADMIN LOGIN] JWT_ADMIN_SECRET not set!");
+      return NextResponse.json(
+        { success: false, message: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
+    // Generate JWT token
     const token = jwt.sign(
       { adminId: admin._id, role: admin.role },
-      process.env.JWT_ADMIN_SECRET!,
-      { expiresIn: "7d" }
+      process.env.JWT_ADMIN_SECRET,
+      { expiresIn: "24h" }
     );
+    console.log("✅ [ADMIN LOGIN] Token generated");
 
-    const res = NextResponse.json({ success: true });
-    res.cookies.set("admin_token", token, {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
+    // Set cookie
+    const response = NextResponse.json({
+      success: true,
+      message: "Login successful",
+      admin: {
+        id: admin._id,
+        email: admin.email,
+        role: admin.role,
+      },
     });
 
-    return res;
-  } catch (err) {
-    console.error(err);
+    response.cookies.set("admin_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 86400, // 24 hours
+    });
+
+    console.log("✅ [ADMIN LOGIN] Success");
+    return response;
+  } catch (error: any) {
+    console.error("❌ [ADMIN LOGIN] Error:", error);
     return NextResponse.json(
-      { success: false },
+      { 
+        success: false, 
+        message: "Server error",
+        details: error.message 
+      },
       { status: 500 }
     );
   }
