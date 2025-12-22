@@ -59,25 +59,63 @@ export default function Passes() {
     };
   }, []);
 
-  /* ------------------ FETCH USER ------------------ */
+  /* ------------------ FETCH USER (FREQUENT CHECKS) ------------------ */
   useEffect(() => {
-    fetch("/api/auth/me", {
-      credentials: "include",
-      cache: "no-store",
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        console.log("🔍 User fetch result:", data); // Debug log
-        setUser(data?.success ? data.user : null);
-      })
-      .catch((err) => {
-        console.error("User fetch error:", err);
-        setUser(null);
-      });
+    let mounted = true;
+    let interval: any = null;
+
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && data?.success) {
+            console.log("✅ User authenticated:", data.user.name);
+            setUser(data.user);
+          } else if (mounted) {
+            console.log("❌ User not authenticated");
+            setUser(null);
+          }
+        } else if (mounted) {
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("Auth check error:", err);
+        if (mounted) setUser(null);
+      }
+    };
+
+    // 🔥 Check immediately on mount
+    checkAuth();
+
+    // 🔥 Check every 3 seconds to detect login changes quickly
+    interval = setInterval(checkAuth, 3000);
+
+    // 🔥 Also check when window gains focus (user comes back to tab)
+    const handleFocus = () => checkAuth();
+    window.addEventListener("focus", handleFocus);
+
+    // 🔥 Listen for manual login event from Header
+    const handleUserLoggedIn = () => {
+      console.log("🔥 Login event received, refreshing user state");
+      checkAuth();
+    };
+    window.addEventListener("userLoggedIn", handleUserLoggedIn);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("userLoggedIn", handleUserLoggedIn);
+    };
   }, []);
 
   const handleBookNowClick = (pass: any) => {
-    console.log("🔍 Book Now clicked", { pass, user }); // Debug log
+    console.log("🔍 Book Now clicked", { pass, user });
     
     if (!user) {
       console.log("🔍 User not logged in, showing prompt");
@@ -86,12 +124,12 @@ export default function Passes() {
       return;
     }
     
-    console.log("🔍 Setting selected pass");
+    console.log("🔍 Opening booking modal");
     setSelectedPass(pass);
   };
 
   const startPayment = async (pass: any, form: any) => {
-    console.log("🔍 Starting payment", { pass, form }); // Debug log
+    console.log("🔍 Starting payment", { pass, form });
     
     // Check if Razorpay is loaded
     if (!window.Razorpay) {
@@ -169,10 +207,13 @@ export default function Passes() {
           Passes
         </h2>
 
-        {/* Auth Prompt */}
+        {/* 🔥 IMPROVED: Better styled auth prompt */}
         {showAuthPrompt && (
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-            ⚠️ Please login first to book passes
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl shadow-2xl z-50 animate-bounce border-2 border-yellow-400">
+            <p className="font-bold text-lg flex items-center gap-2">
+              <span className="text-2xl">⚠️</span>
+              Please login first to book passes
+            </p>
           </div>
         )}
 

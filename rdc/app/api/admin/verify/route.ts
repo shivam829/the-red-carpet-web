@@ -1,0 +1,52 @@
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Booking from "@/models/Booking";
+import { verifyAdmin } from "@/lib/adminAuth";
+
+export async function POST(req: Request) {
+  try {
+    verifyAdmin();
+    await dbConnect();
+
+    const { reference }: { reference: string } = await req.json();
+
+    if (!reference) {
+      return NextResponse.json(
+        { success: false, message: "Reference required" },
+        { status: 400 }
+      );
+    }
+
+    const booking = await Booking.findOne({ reference }).exec();
+
+    if (!booking) {
+      return NextResponse.json(
+        { success: false, message: "Invalid ticket" },
+        { status: 404 }
+      );
+    }
+
+    if (booking.isUsed) {
+      return NextResponse.json(
+        { success: false, message: "Ticket already used" },
+        { status: 409 }
+      );
+    }
+
+    booking.isUsed = true;
+    booking.usedAt = new Date();
+    await booking.save();
+
+    return NextResponse.json({
+      success: true,
+      message: "Entry verified successfully",
+      booking,
+    });
+  } catch (err) {
+    console.error("ADMIN VERIFY ERROR:", err);
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+}

@@ -38,27 +38,28 @@ export default function Header() {
 
   return (
     <>
+      {/* 🔥 FIXED: Added proper styling and z-index */}
       <div className="fixed top-0 right-0 z-50 p-4 flex gap-3">
         {user ? (
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="bg-gold text-black px-6 py-3 rounded-full font-semibold"
+              className="bg-gold text-black px-6 py-3 rounded-full font-semibold hover:bg-yellow-600 transition shadow-lg"
             >
               👤 {user.name}
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-black border border-gold/30 rounded-lg">
+              <div className="absolute right-0 mt-2 w-56 bg-black border border-gold/30 rounded-lg shadow-xl">
                 <Link
                   href="/my-tickets"
-                  className="block px-4 py-3 text-white hover:bg-gold/20"
+                  className="block px-4 py-3 text-white hover:bg-gold/20 transition"
                 >
                   🎟️ My Tickets
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-4 py-3 text-red-400"
+                  className="w-full text-left px-4 py-3 text-red-400 hover:bg-red-900/20 transition"
                 >
                   Logout
                 </button>
@@ -67,8 +68,21 @@ export default function Header() {
           </div>
         ) : (
           <>
-            <button onClick={() => setShowLogin(true)}>Login</button>
-            <button onClick={() => setShowSignup(true)}>Sign Up</button>
+            {/* 🔥 FIXED: Added full styling to Login button */}
+            <button
+              onClick={() => setShowLogin(true)}
+              className="bg-gold/90 text-black px-6 py-3 rounded-full font-semibold hover:bg-gold transition shadow-lg backdrop-blur-sm"
+            >
+              Login
+            </button>
+
+            {/* 🔥 FIXED: Added full styling to Sign Up button */}
+            <button
+              onClick={() => setShowSignup(true)}
+              className="bg-white/10 text-white px-6 py-3 rounded-full font-semibold border-2 border-gold/50 hover:bg-gold/20 hover:border-gold transition shadow-lg backdrop-blur-sm"
+            >
+              Sign Up
+            </button>
           </>
         )}
       </div>
@@ -79,6 +93,8 @@ export default function Header() {
           onSuccess={(u) => {
             setUser(u);
             setShowLogin(false);
+            // 🔥 Trigger event so Passes component knows user logged in
+            window.dispatchEvent(new Event('userLoggedIn'));
           }}
           onSwitchToSignup={() => {
             setShowLogin(false);
@@ -90,7 +106,11 @@ export default function Header() {
       {showSignup && (
         <SignupModal
           onClose={() => setShowSignup(false)}
-          onSuccess={() => setShowSignup(false)}
+          onSuccess={() => {
+            setShowSignup(false);
+            // 🔥 Trigger refresh after signup
+            window.dispatchEvent(new Event('userLoggedIn'));
+          }}
           onSwitchToLogin={() => {
             setShowSignup(false);
             setShowLogin(true);
