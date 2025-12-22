@@ -38,7 +38,7 @@ export default function Header() {
 
   return (
     <>
-      {/* 🔥 FIXED: Added proper styling and z-index */}
+      {/* HEADER ACTIONS (RIGHT SIDE ONLY) */}
       <div className="fixed top-0 right-0 z-50 p-4 flex gap-3">
         {user ? (
           <div className="relative">
@@ -68,18 +68,16 @@ export default function Header() {
           </div>
         ) : (
           <>
-            {/* 🔥 FIXED: Added full styling to Login button */}
             <button
               onClick={() => setShowLogin(true)}
-              className="bg-gold/90 text-black px-6 py-3 rounded-full font-semibold hover:bg-gold transition shadow-lg backdrop-blur-sm"
+              className="bg-gold/90 text-black px-6 py-3 rounded-full font-semibold hover:bg-gold transition shadow-lg"
             >
               Login
             </button>
 
-            {/* 🔥 FIXED: Added full styling to Sign Up button */}
             <button
               onClick={() => setShowSignup(true)}
-              className="bg-white/10 text-white px-6 py-3 rounded-full font-semibold border-2 border-gold/50 hover:bg-gold/20 hover:border-gold transition shadow-lg backdrop-blur-sm"
+              className="bg-white/10 text-white px-6 py-3 rounded-full font-semibold border-2 border-gold/50 hover:bg-gold/20 hover:border-gold transition shadow-lg"
             >
               Sign Up
             </button>
@@ -93,8 +91,7 @@ export default function Header() {
           onSuccess={(u) => {
             setUser(u);
             setShowLogin(false);
-            // 🔥 Trigger event so Passes component knows user logged in
-            window.dispatchEvent(new Event('userLoggedIn'));
+            window.dispatchEvent(new Event("userLoggedIn"));
           }}
           onSwitchToSignup={() => {
             setShowLogin(false);
@@ -108,8 +105,7 @@ export default function Header() {
           onClose={() => setShowSignup(false)}
           onSuccess={() => {
             setShowSignup(false);
-            // 🔥 Trigger refresh after signup
-            window.dispatchEvent(new Event('userLoggedIn'));
+            window.dispatchEvent(new Event("userLoggedIn"));
           }}
           onSwitchToLogin={() => {
             setShowSignup(false);

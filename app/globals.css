@@ -3,13 +3,45 @@
 @tailwind utilities;
 
 body {
-  background-color: #0F0F0F;
+  background-color: #0f0f0f;
   color: white;
 }
+
 html {
   scroll-behavior: smooth;
 }
 
+/* 🔥 BLINKING BANNER ANIMATION */
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.animate-blink {
+  animation: blink 1.2s infinite ease-in-out;
+}
+
+/* FLOATING LANTERNS */
+@keyframes lantern {
+  from {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(-120vh);
+    opacity: 0;
+  }
+}
+
+.animate-lantern {
+  animation: lantern 18s linear infinite;
+}
+
+/* PRINT STYLES */
 @media print {
   body {
     background: #5a0f0f !important;
@@ -17,7 +49,7 @@ html {
     print-color-adjust: exact !important;
   }
 
-  .print\\:hidden {
+  .print\:hidden {
     display: none !important;
   }
 
@@ -32,38 +64,4 @@ html {
     border-radius: 20px !important;
     padding: 24px !important;
   }
-
-  @keyframes lantern {
-  from {
-    transform: translateY(0);
-    opacity: 0.6;
-  }
-  to {
-    transform: translateY(-120vh);
-    opacity: 0;
-  }
-}
-.animate-lantern {
-  animation: lantern 18s linear infinite;
-}
-  /* Add this to your component or globals.css */
-.login-button, .signup-button {
-  position: relative;
-  z-index: 50;
-  background: rgba(201, 162, 77, 0.9) !important; /* gold color */
-  color: black !important;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.animate-blink {
-  animation: blink 1.2s infinite;
-}
-
-
 }
