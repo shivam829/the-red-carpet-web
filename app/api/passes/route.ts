@@ -1,5 +1,5 @@
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
@@ -11,7 +11,7 @@ export async function GET() {
 
     const passes = await Pass.find({}).lean();
 
-    const safePasses = passes.map((p: any) => ({
+    const normalized = passes.map((p: any) => ({
       ...p,
       remainingCount:
         typeof p.remainingCount === "number"
@@ -25,9 +25,9 @@ export async function GET() {
           : 0,
     }));
 
-    return NextResponse.json(safePasses);
-  } catch (err: any) {
-    console.error("PASSES API ERROR:", err.message);
+    return NextResponse.json(normalized);
+  } catch (error) {
+    console.error("🔥 PASSES API CRASH:", error);
     return NextResponse.json(
       { error: "Failed to fetch passes" },
       { status: 500 }

@@ -5,7 +5,7 @@ export interface IPass extends Document {
   price: number;
   phase?: number;
   visible?: boolean;
-  remainingCount?: number; // ✅ OPTIONAL
+  remainingCount?: number; // ⬅️ OPTIONAL
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,7 +16,9 @@ const PassSchema = new Schema<IPass>(
     price: { type: Number, required: true },
     phase: { type: Number },
     visible: { type: Boolean, default: true },
-    remainingCount: { type: Number }, // ❌ NOT required
+
+    // 🔥 REMOVE required: true
+    remainingCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
