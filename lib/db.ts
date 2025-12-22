@@ -1,13 +1,11 @@
 // lib/db.ts
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
-
+const MONGODB_URI = process.env.MONGODB_URI!;
 if (!MONGODB_URI) {
   throw new Error("MONGODB_URI not defined");
 }
 
-// Global cache (REQUIRED for Vercel)
 let cached = (global as any).mongoose;
 
 if (!cached) {
@@ -18,7 +16,9 @@ if (!cached) {
 }
 
 export default async function dbConnect() {
-  if (cached.conn) return cached.conn;
+  if (cached.conn) {
+    return cached.conn;
+  }
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
