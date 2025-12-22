@@ -5,7 +5,9 @@ import PDFDocument from "pdfkit";
  * - name
  * - passName
  * - quantity
- * - amount
+ * - baseAmount
+ * - bookingFee
+ * - amount (final amount paid)
  * - reference
  * - qrCode (base64 data URL)
  */
@@ -24,7 +26,7 @@ export async function generateTicketPDF(booking: any) {
 
   doc
     .fontSize(22)
-    .text("🎟 THE RED CARPET NYE", {
+    .text("🎟 THE RED CARPET NYE 2025", {
       align: "center",
     });
 
@@ -35,21 +37,50 @@ export async function generateTicketPDF(booking: any) {
 
   doc.moveDown(2);
 
-  /* ------------------ DETAILS ------------------ */
+  /* ------------------ BOOKING DETAILS ------------------ */
 
-  doc.fontSize(14);
+  doc.fontSize(14).fillColor("black");
+
   doc.text(`Name: ${booking.name}`);
-  doc.text(`Pass: ${booking.passName}`);
+  doc.text(`Pass Type: ${booking.passName}`);
   doc.text(`Quantity: ${booking.quantity}`);
-  doc.text(`Amount: ₹${booking.amount}`);
-  doc.text(`Reference: ${booking.reference}`);
+
+  doc.moveDown(1);
+
+  /* ------------------ PRICE BREAKDOWN ------------------ */
+
+  doc.fontSize(13);
+
+  if (booking.baseAmount != null) {
+    doc.text(`Base Amount: ₹${booking.baseAmount}`);
+  }
+
+  if (booking.bookingFee != null) {
+    doc.text(`Booking Charge (3%): ₹${booking.bookingFee}`);
+  }
+
+  doc
+    .moveDown(0.5)
+    .fontSize(15)
+    .text(`Total Paid: ₹${booking.amount}`, {
+      underline: true,
+    });
+
+  doc.moveDown(1.5);
+
+  /* ------------------ REFERENCE ------------------ */
+
+  doc
+    .fontSize(13)
+    .text(`Reference Code: ${booking.reference}`, {
+      bold: true,
+    });
 
   doc.moveDown(2);
 
   /* ------------------ QR CODE ------------------ */
 
   if (booking.qrCode) {
-    // Convert base64 data URL → Buffer
     const base64Data = booking.qrCode.replace(
       /^data:image\/png;base64,/,
       ""
@@ -83,8 +114,9 @@ export async function generateTicketPDF(booking: any) {
 
   doc
     .fontSize(10)
+    .fillColor("gray")
     .text(
-      "Please carry this ticket (digital or printed) to the venue.\nQR code is valid for single entry only.",
+      "Please carry this ticket (digital or printed) to the venue.\nQR code is valid for single entry only.\nBooking charge is non-refundable.",
       {
         align: "center",
       }

@@ -38,7 +38,19 @@ export default function Header() {
 
   return (
     <>
-      {/* HEADER ACTIONS (RIGHT SIDE ONLY) */}
+      {/* 🎟️ MY TICKETS — TOP LEFT (ONLY WHEN LOGGED IN) */}
+      {user && (
+        <div className="fixed top-16 left-5 z-50">
+          <Link
+            href="/my-tickets"
+            className="bg-black/70 border border-gold/40 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gold/20 transition backdrop-blur-sm font-medium"
+          >
+            🎟️ My Tickets
+          </Link>
+        </div>
+      )}
+
+      {/* HEADER ACTIONS — TOP RIGHT */}
       <div className="fixed top-0 right-0 z-50 p-4 flex gap-3">
         {user ? (
           <div className="relative">
@@ -51,12 +63,6 @@ export default function Header() {
 
             {showMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-black border border-gold/30 rounded-lg shadow-xl">
-                <Link
-                  href="/my-tickets"
-                  className="block px-4 py-3 text-white hover:bg-gold/20 transition"
-                >
-                  🎟️ My Tickets
-                </Link>
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-3 text-red-400 hover:bg-red-900/20 transition"

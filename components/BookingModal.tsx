@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+const BOOKING_FEE_PERCENT = 0.03;
+
 export default function BookingModal({
   pass,
   onClose,
@@ -16,7 +18,9 @@ export default function BookingModal({
   const [phone, setPhone] = useState("");
   const [qty, setQty] = useState(1);
 
-  const total = pass.price * qty;
+  const baseAmount = pass.price * qty;
+  const bookingFee = Math.round(baseAmount * BOOKING_FEE_PERCENT);
+  const finalAmount = baseAmount + bookingFee;
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -56,8 +60,20 @@ export default function BookingModal({
           onChange={(e) => setQty(Number(e.target.value))}
         />
 
-        <div className="text-lg mb-4">
-          Total: <span className="text-gold">₹{total}</span>
+        {/* PRICE BREAKDOWN */}
+        <div className="text-sm space-y-1 mb-4">
+          <div className="flex justify-between">
+            <span>Base Amount</span>
+            <span>₹{baseAmount}</span>
+          </div>
+          <div className="flex justify-between text-yellow-400">
+            <span>Booking Fee (3%)</span>
+            <span>₹{bookingFee}</span>
+          </div>
+          <div className="flex justify-between text-lg font-bold text-gold border-t border-gold/30 pt-2">
+            <span>Total Payable</span>
+            <span>₹{finalAmount}</span>
+          </div>
         </div>
 
         <div className="flex gap-3">
@@ -70,7 +86,12 @@ export default function BookingModal({
 
           <button
             onClick={() =>
-              onSubmit({ name, email, phone, qty, total })
+              onSubmit({
+                name,
+                email,
+                phone,
+                qty,
+              })
             }
             className="flex-1 py-2 bg-gold text-black rounded font-semibold"
           >
