@@ -9,12 +9,6 @@ if (!MONGODB_URI) {
   );
 }
 
-// 🔍 DEBUG: Log the actual URI format (first 20 chars only for security)
-console.log('🔍 MONGODB_URI exists:', !!MONGODB_URI);
-console.log('🔍 MONGODB_URI length:', MONGODB_URI?.length);
-console.log('🔍 MONGODB_URI starts with:', MONGODB_URI?.substring(0, 20));
-console.log('🔍 MONGODB_URI type:', typeof MONGODB_URI);
-
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
