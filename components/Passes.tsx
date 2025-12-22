@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import BookingModal from "./BookingModal";
+import { useRouter } from "next/navigation";
 
 declare global {
   interface Window {
@@ -10,6 +11,8 @@ declare global {
 }
 
 export default function Passes() {
+  const router = useRouter(); // ✅ HOOK AT TOP LEVEL
+
   const [passes, setPasses] = useState<any[]>([]);
   const [totalRemaining, setTotalRemaining] = useState(0);
   const [selectedPass, setSelectedPass] = useState<any>(null);
@@ -25,12 +28,7 @@ export default function Passes() {
     const fetchPasses = async () => {
       try {
         const res = await fetch("/api/passes", { cache: "no-store" });
-
-        if (!res.ok) {
-          console.error("Passes API failed:", res.status);
-          clearInterval(interval);
-          return;
-        }
+        if (!res.ok) return;
 
         const data = await res.json();
         if (!Array.isArray(data)) return;
@@ -44,10 +42,7 @@ export default function Passes() {
             )
           );
         }
-      } catch (err) {
-        console.error("Fetch passes error:", err);
-        clearInterval(interval);
-      }
+      } catch {}
     };
 
     fetchPasses();
@@ -70,17 +65,9 @@ export default function Passes() {
           credentials: "include",
           cache: "no-store",
         });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (mounted && data?.success) {
-            setUser(data.user);
-          } else if (mounted) {
-            setUser(null);
-          }
-        } else if (mounted) {
-          setUser(null);
-        }
+        const data = await res.json();
+        if (mounted && data?.success) setUser(data.user);
+        else if (mounted) setUser(null);
       } catch {
         if (mounted) setUser(null);
       }
@@ -112,15 +99,16 @@ export default function Passes() {
     setSelectedPass(pass);
   };
 
+  /* ------------------ PAYMENT ------------------ */
   const startPayment = async (pass: any, form: any) => {
     if (!window.Razorpay) {
       alert("Payment system is loading, please try again.");
       return;
     }
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
+    try {
       const res = await fetch("/api/payments/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,10 +122,7 @@ export default function Passes() {
         }),
       });
 
-      if (!res.ok) {
-        alert("Failed to create order");
-        return;
-      }
+      if (!res.ok) throw new Error("Order failed");
 
       const data = await res.json();
 
@@ -148,6 +133,7 @@ export default function Passes() {
         name: "The Red Carpet",
         description: pass.name,
         order_id: data.orderId,
+
         handler: async (response: any) => {
           const verifyRes = await fetch("/api/payments/verify", {
             method: "POST",
@@ -162,21 +148,29 @@ export default function Passes() {
           });
 
           const verify = await verifyRes.json();
+
           if (verify.success) {
-            window.location.href = `/ticket/${data.bookingId}`;
+            setSelectedPass(null); // ✅ CLOSE MODAL AFTER SUCCESS
+            router.push(`/ticket/${data.bookingId}`); // ✅ SPA NAVIGATION
           } else {
             alert("Payment verification failed");
           }
         },
+
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+          },
+        },
+
         theme: { color: "#C9A24D" },
       });
 
-      rzp.open();
-    } catch {
+      rzp.open(); // ✅ OPEN FIRST
+    } catch (err) {
+      console.error(err);
       alert("Payment failed. Please try again.");
-    } finally {
       setLoading(false);
-      setSelectedPass(null);
     }
   };
 
@@ -188,58 +182,40 @@ export default function Passes() {
         </h2>
 
         {showAuthPrompt && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl shadow-2xl z-50 animate-bounce border-2 border-yellow-400">
-            <p className="font-bold text-lg flex items-center gap-2">
-              ⚠️ Please login first to book passes
-            </p>
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-xl z-50">
+            ⚠️ Please login first to book passes
           </div>
         )}
 
-        <div className="text-center mb-10">
-          <div className="inline-block bg-red-900/80 border border-gold px-8 py-4 rounded-2xl">
-            <p className="text-xl font-bold text-gold">
-              🎟️ Available Passes: {totalRemaining}
-            </p>
-          </div>
-        </div>
-
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {passes.length === 0 && (
-            <p className="col-span-3 text-center text-gray-400">
-              Passes will be available shortly.
-            </p>
-          )}
-
           {passes.map((pass) => (
             <div
               key={pass._id}
-              className="border border-gold/30 p-6 rounded-xl text-center bg-black/50 transition hover:scale-105"
+              className="border border-gold/30 p-6 rounded-xl text-center bg-black/50"
             >
               <h3 className="text-2xl font-bold text-gold mb-2">
                 {pass.name}
               </h3>
 
-              <p className="text-gray-300 mb-1">
+              <p className="text-gray-300">
                 Available:{" "}
                 <span className="text-gold font-semibold">
                   {pass.remainingCount}
                 </span>
               </p>
 
-              {/* BASE PRICE */}
-              <p className="text-xl font-semibold mb-1">
+              <p className="text-xl font-semibold mt-2">
                 ₹{pass.price}
               </p>
 
-              {/* BOOKING CHARGE NOTE */}
               <p className="text-sm text-gray-400 mb-4">
-                + 3% booking charge applicable
+                + 3% booking charge
               </p>
 
               <button
-                disabled={pass.remainingCount <= 0}
                 onClick={() => handleBookNowClick(pass)}
-                className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={pass.remainingCount <= 0}
+                className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black"
               >
                 {pass.remainingCount <= 0 ? "Sold Out" : "Book Now"}
               </button>

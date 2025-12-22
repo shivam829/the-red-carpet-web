@@ -38,7 +38,7 @@ export default function Header() {
 
   return (
     <>
-      {/* 🎟️ MY TICKETS — TOP LEFT (ONLY WHEN LOGGED IN) */}
+      {/* 🎟️ MY TICKETS — TOP LEFT */}
       {user && (
         <div className="fixed top-16 left-5 z-50">
           <Link
@@ -91,6 +91,7 @@ export default function Header() {
         )}
       </div>
 
+      {/* LOGIN MODAL */}
       {showLogin && (
         <LoginModal
           onClose={() => setShowLogin(false)}
@@ -106,13 +107,10 @@ export default function Header() {
         />
       )}
 
+      {/* SIGNUP MODAL */}
       {showSignup && (
         <SignupModal
           onClose={() => setShowSignup(false)}
-          onSuccess={() => {
-            setShowSignup(false);
-            window.dispatchEvent(new Event("userLoggedIn"));
-          }}
           onSwitchToLogin={() => {
             setShowSignup(false);
             setShowLogin(true);
