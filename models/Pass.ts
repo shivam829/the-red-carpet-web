@@ -5,7 +5,7 @@ export interface IPass extends Document {
   price: number;
   phase?: number;
   visible?: boolean;
-  remainingCount?: number;
+  remainingCount?: number; // ✅ OPTIONAL
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,14 +14,15 @@ const PassSchema = new Schema<IPass>(
   {
     name: { type: String, required: true },
     price: { type: Number, required: true },
-    phase: Number,
+    phase: { type: Number },
     visible: { type: Boolean, default: true },
-
-    // ✅ IMPORTANT: NOT required
-    remainingCount: { type: Number, default: 0 },
+    remainingCount: { type: Number }, // ❌ NOT required
   },
   { timestamps: true }
 );
 
-export default (mongoose.models.Pass as Model<IPass>) ||
+const Pass =
+  (mongoose.models.Pass as Model<IPass>) ||
   mongoose.model<IPass>("Pass", PassSchema);
+
+export default Pass;
