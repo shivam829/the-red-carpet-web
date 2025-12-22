@@ -8,6 +8,7 @@ import VVIP from "@/components/VVIP";
 import LayoutMap from "@/components/LayoutMap";
 import Header from "@/components/Header";
 import InstagramReelsWidget from "@/components/InstagramReelsWidget";
+import DistrictAppBadge from "@/components/DistrictAppBadge";
 
 export default function App() {
   return (
@@ -72,13 +73,15 @@ export default function App() {
             31st December 2025 · Amber by Sayaji, Bhopal
           </motion.p>
 
-          <motion.a
-            href="#passes"
-            className="mt-10 px-10 py-4 bg-redcarpet rounded-xl text-lg hover:bg-gold hover:text-black transition z-10"
-            whileHover={{ scale: 1.05 }}
-          >
-            Reserve Your Entry
-          </motion.a>
+          <div className="mt-10 flex items-center justify-center gap-4 z-10 flex-wrap">
+  <motion.a
+    href="#passes"
+    className="px-10 py-4 bg-redcarpet rounded-xl text-lg hover:bg-gold hover:text-black transition"
+    whileHover={{ scale: 1.05 }}
+  >
+    Reserve Your Entry
+  </motion.a>
+  <DistrictAppBadge /></div>
         </section>
         
 

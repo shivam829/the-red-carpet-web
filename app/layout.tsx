@@ -1,6 +1,8 @@
 import "./globals.css";
 import { ReactNode } from "react";
 import { Analytics } from '@vercel/analytics/react';
+import DistrictAppBadge from "@/components/DistrictAppBadge";
+
 
 export const metadata = {
   manifest: '/manifest.json',
@@ -34,7 +36,9 @@ export default function RootLayout({
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat"
           }}
+          
         />
+      
            <Analytics />
         {/* LIGHT OVERLAY */}
         <div
