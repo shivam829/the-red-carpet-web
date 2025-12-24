@@ -181,21 +181,56 @@ export default function Page() {
           </ul>
         </section>
 
-        {/* ================= FOOTER ================= */}
-        <footer className="py-8 text-center text-gray-400 bg-black">
-          <div className="flex justify-center gap-8 mb-4">
-            <a href="https://www.instagram.com/theredcarpet2026" target="_blank">
-              <img src="/instalogo.jpg" className="w-7 h-7" />
-            </a>
-            <a href="https://wa.me/917000443100" target="_blank">
-              <img src="/whatsapp.png" className="w-7 h-7" />
-            </a>
-          </div>
 
-          <p className="text-xs md:text-sm">
-            © 2025 Sundown Events · The Red Carpet
-          </p>
-        </footer>
+        {/* ================= CONTACT ================= */}
+<section
+  id="contact"
+  className="section bg-black/90 text-center"
+>
+  <h2 className="section-title">Contact Us</h2>
+
+  <p className="mt-4 text-gray-400 text-sm md:text-base">
+    Have questions or need assistance? Reach out to us directly.
+  </p>
+
+  <div className="mt-8 flex justify-center gap-10">
+    {/* Instagram */}
+    <a
+      href="https://www.instagram.com/theredcarpet2026"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:scale-110 transition"
+    >
+      <img
+        src="/instalogo.jpg"
+        alt="Instagram"
+        className="w-10 h-10 md:w-12 md:h-12"
+      />
+    </a>
+
+    {/* WhatsApp */}
+    <a
+      href="https://wa.me/917000443100"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:scale-110 transition"
+    >
+      <img
+        src="/whatsapp.png"
+        alt="WhatsApp"
+        className="w-10 h-10 md:w-12 md:h-12"
+      />
+    </a>
+  </div>
+</section>
+
+
+        <footer className="py-10 text-center text-gray-400 bg-black">
+  <p className="text-xs md:text-sm">
+    © 2025 Sundown Events · The Red Carpet
+  </p>
+</footer>
+
 
         {/* ================= FLOATING CTA ================= */}
         <button

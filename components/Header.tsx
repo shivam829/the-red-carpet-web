@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-const NAV_ITEMS = ["Experience", "Passes", "Venue", "Terms"];
+const NAV_ITEMS = ["Experience", "Passes", "Venue", "Terms","Contact Us"];
 
 export default function Header() {
   const [open, setOpen] = useState(false);
