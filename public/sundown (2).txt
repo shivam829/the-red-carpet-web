@@ -1,0 +1,4243 @@
+D:\SHIVAM\rdc\the-red-carpet-web\app\admin\bookings\page.tsx->"use client";
+
+import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
+
+export default function AdminBookings() {
+  const [data, setData] = useState<any[]>([]);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/bookings", { credentials: "include" })
+      .then((res) => res.json())
+      .then((res) => setData(res.bookings || []));
+  }, []);
+
+  const safe = (v: any) => (v ?? "").toString().toLowerCase();
+
+  const filtered = data.filter((b) =>
+    safe(b.reference).includes(query.toLowerCase()) ||
+    safe(b.phone).includes(query.toLowerCase())
+  );
+
+  const exportExcel = () => {
+    const sheet = XLSX.utils.json_to_sheet(
+      filtered.map((b) => ({
+        Name: b.name,
+        Phone: b.phone,
+        Reference: b.reference,
+        Amount: b.amount,
+        Status: b.status,
+        Used: b.isUsed ? "YES" : "NO",
+        BookedAt: new Date(b.createdAt).toLocaleString(),
+      }))
+    );
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheet, "Bookings");
+    XLSX.writeFile(wb, "bookings.xlsx");
+  };
+
+  return (
+    <div>
+      <h1 className="text-3xl text-gold mb-4">Bookings</h1>
+
+      <div className="flex gap-4 mb-4">
+        <input
+          placeholder="Search by phone or reference"
+          className="p-2 bg-black border border-white/20"
+          onChange={(e) => setQuery(e.target.value)}
+        />
+
+        <button
+          onClick={exportExcel}
+          className="bg-gold px-4 py-2 text-black rounded"
+        >
+          Download Excel
+        </button>
+      </div>
+
+      <table className="w-full text-sm border border-white/10">
+        <thead className="bg-black/60">
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Reference</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Used</th>
+            <th>Booked At</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filtered.map((b) => (
+            <tr key={b._id} className="border-t border-white/10 text-center">
+              <td>{b.name}</td>
+              <td>{b.phone}</td>
+              <td>{b.reference}</td>
+              <td>₹{b.amount}</td>
+              <td>{b.status}</td>
+              <td>{b.isUsed ? "YES" : "NO"}</td>
+              <td>{new Date(b.createdAt).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\admin\dashboard\page.tsx->"use client";
+
+import { useEffect, useState } from "react";
+
+export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    total: 0,
+    checkedIn: 0,
+  });
+
+  useEffect(() => {
+    fetch("/api/admin/bookings", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        const bookings = data.bookings || [];
+        setStats({
+          total: bookings.length,
+          checkedIn: bookings.filter((b: any) => b.isUsed).length,
+        });
+      })
+      .catch(console.error);
+  }, []);
+
+  return (
+    <div>
+      <h1 className="text-3xl text-gold mb-6">Dashboard</h1>
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="bg-black/60 p-6 rounded">
+          <p>Total Bookings</p>
+          <h2 className="text-3xl">{stats.total}</h2>
+        </div>
+
+        <div className="bg-black/60 p-6 rounded">
+          <p>Checked In</p>
+          <h2 className="text-3xl">{stats.checkedIn}</h2>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\admin\login\page.tsx->"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function login() {
+    setLoading(true);
+    setError("");
+
+    const res = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    setLoading(false);
+
+    if (!res.ok) {
+      setError("Invalid admin credentials");
+      return;
+    }
+
+    router.push("/admin/dashboard");
+  }
+
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="bg-[#0f172a] p-8 rounded-xl w-full max-w-md">
+        <h1 className="text-2xl text-gold font-bold mb-6 text-center">
+          Admin Login
+        </h1>
+
+        <input
+          className="w-full p-3 mb-4 bg-black border text-white"
+          placeholder="Admin Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          className="w-full p-3 mb-4 bg-black border text-white"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+        />
+
+        {error && <p className="text-red-500 mb-3">{error}</p>}
+
+        <button
+          onClick={login}
+          disabled={loading}
+          className="w-full bg-gold text-black py-3 rounded"
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\admin\passes\page.tsx-import AdminPassesClient from "@/components/admin/AdminPassesClient";
+
+export default function AdminPassesPage() {
+  return <AdminPassesClient />;
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\admin\scan\page.tsx->"use client";
+
+import { Html5QrcodeScanner } from "html5-qrcode";
+import jsQR from "jsqr";
+import { useEffect, useRef, useState } from "react";
+
+export default function AdminScanPage() {
+  const scannerRef = useRef<any>(null);
+  const [reference, setReference] = useState("");
+  const [message, setMessage] = useState("");
+  const [fileRef, setFileRef] = useState<string | null>(null);
+
+  useEffect(() => {
+    scannerRef.current = new Html5QrcodeScanner(
+      "qr-reader",
+      { fps: 10, qrbox: 250 },
+      false
+    );
+
+    scannerRef.current.render(onScanSuccess, () => {});
+    return () => scannerRef.current.clear();
+  }, []);
+
+  async function verify(ref: string) {
+    if (!ref) return;
+
+    const res = await fetch("/api/admin/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ reference: ref }),
+    });
+
+    const data = await res.json();
+    setMessage(data.message);
+  }
+
+  function onScanSuccess(decodedText: string) {
+    try {
+      const parsed = JSON.parse(decodedText);
+      verify(parsed.reference);
+    } catch {
+      verify(decodedText);
+    }
+  }
+
+  /* IMAGE / PDF UPLOAD */
+  const handleFile = async (file: File) => {
+    const buffer = await file.arrayBuffer();
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const qr = jsQR(imageData.data, imageData.width, imageData.height);
+
+      if (qr) {
+        try {
+          const parsed = JSON.parse(qr.data);
+          setFileRef(parsed.reference);
+        } catch {
+          setFileRef(qr.data);
+        }
+      } else {
+        setMessage("QR not detected in file");
+      }
+    };
+  };
+
+  return (
+    <div>
+      <h1 className="text-3xl text-gold mb-6">QR Scan</h1>
+
+      {/* CAMERA SCAN (AUTO VERIFY) */}
+      <div id="qr-reader" className="mb-6" />
+
+      {/* MANUAL VERIFY */}
+      <div className="mb-4 flex gap-2">
+        <input
+          placeholder="Enter Reference ID"
+          value={reference}
+          onChange={(e) => setReference(e.target.value)}
+          className="p-2 bg-black border border-white/20"
+        />
+        <button
+          onClick={() => verify(reference)}
+          className="bg-gold px-4 py-2 text-black rounded"
+        >
+          Verify
+        </button>
+      </div>
+
+      {/* FILE UPLOAD */}
+      <div className="mb-4 flex gap-2">
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          onChange={(e) => e.target.files && handleFile(e.target.files[0])}
+        />
+        <button
+          onClick={() => verify(fileRef || "")}
+          disabled={!fileRef}
+          className="bg-gold px-4 py-2 text-black rounded disabled:opacity-50"
+        >
+          Verify Uploaded File
+        </button>
+      </div>
+
+      {message && <p className="mt-4 text-gold">{message}</p>}
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\admin\setup\page.tsx->"use client";
+
+import { useState } from "react";
+
+export default function AdminSetupPage() {
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const createAdmin = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/create", {
+        method: "POST",
+      });
+      const data = await res.json();
+      setResult(data);
+    } catch (error) {
+      setResult({ success: false, message: "Request failed" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="bg-black/80 border border-gold/30 rounded-2xl p-8 w-full max-w-md">
+        <h1 className="text-3xl font-bold text-gold text-center mb-6">
+          ⚠️ Admin Setup (ONE-TIME USE)
+        </h1>
+
+        <p className="text-gray-300 mb-6 text-center">
+          This will create your first admin account using the credentials from your environment variables.
+        </p>
+
+        <button
+          onClick={createAdmin}
+          disabled={loading || result?.success}
+          className="w-full py-3 bg-gold text-black rounded font-semibold hover:bg-yellow-600 transition disabled:opacity-50 mb-4"
+        >
+          {loading ? "Creating..." : result?.success ? "✅ Admin Created" : "Create Admin Account"}
+        </button>
+
+        {result && (
+          <div
+            className={`p-4 rounded ${
+              result.success
+                ? "bg-green-600/20 border border-green-600 text-green-400"
+                : "bg-red-600/20 border border-red-600 text-red-400"
+            }`}
+          >
+            <p className="font-semibold mb-2">
+              {result.success ? "✅ Success" : "❌ Error"}
+            </p>
+            <p className="text-sm">{result.message}</p>
+            {result.admin && (
+              <div className="mt-3 text-sm">
+                <p><strong>Email:</strong> {result.admin.email}</p>
+                <p><strong>Role:</strong> {result.admin.role}</p>
+              </div>
+            )}
+            {result.error && (
+              <p className="mt-2 text-sm">Details: {result.error}</p>
+            )}
+          </div>
+        )}
+
+        {result?.success && (
+          <div className="mt-6">
+            <a
+              href="/admin/login"
+              className="block w-full py-3 bg-green-600 text-white text-center rounded font-semibold hover:bg-green-700 transition"
+            >
+              Go to Login →
+            </a>
+            
+            <p className="text-red-400 text-sm mt-4 text-center">
+              ⚠️ Delete this page and /api/admin/create after use!
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\admin\layout.tsx->"use client";
+
+import Link from "next/link";
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen flex bg-black text-white">
+      {/* SIDEBAR */}
+      <aside className="w-64 border-r border-white/10 p-6 flex flex-col">
+        <h1 className="text-gold text-xl font-bold mb-8">
+          THE RED CARPET
+        </h1>
+
+        {/* NAV LINKS */}
+        <nav className="flex flex-col gap-4 flex-1">
+          <Link href="/admin/dashboard">Dashboard</Link>
+          <Link href="/admin/bookings">Bookings</Link>
+          <Link href="/admin/scan">QR Scan</Link>
+        </nav>
+
+        {/* LOGOUT BUTTON */}
+        <button
+          onClick={async () => {
+            await fetch("/api/admin/logout", {
+              method: "POST",
+              credentials: "include",
+            });
+            window.location.href = "/admin/login";
+          }}
+          className="mt-8 bg-red-700 hover:bg-red-800 text-white py-2 rounded"
+        >
+          Logout
+        </button>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 p-10">{children}</main>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\bookings\route.ts->import { NextResponse } from "next/server";
+import { verifyAdmin } from "@/lib/adminAuth";
+import dbConnect from "@/lib/db";
+import Booking from "@/models/Booking";
+
+export async function GET() {
+  try {
+    verifyAdmin();
+    await dbConnect();
+
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    return NextResponse.json({ success: true, bookings });
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\create\route.ts->// app/api/admin/create/route.ts
+// ⚠️ USE ONCE THEN DELETE THIS FILE FOR SECURITY
+
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Admin from "@/models/Admin";
+import bcrypt from "bcryptjs";
+
+export async function POST(req: Request) {
+  try {
+    // Get credentials from env
+    const email = process.env.ADMIN_EMAIL || "admin@redcarpet.com";
+    const password = process.env.ADMIN_PASSWORD || "supersecure123";
+
+    await dbConnect();
+
+    // Check if admin already exists
+    const existing = await Admin.findOne({ email });
+    if (existing) {
+      return NextResponse.json(
+        { success: false, message: "Admin already exists" },
+        { status: 400 }
+      );
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create admin
+    const admin = await Admin.create({
+      email,
+      password: hashedPassword,
+      role: "SUPER",
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Admin created successfully",
+      admin: {
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+  } catch (error: any) {
+    console.error("❌ Create admin error:", error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: "Failed to create admin",
+        error: error.message 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\login\route.ts->import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import dbConnect from "@/lib/db";
+import Admin from "@/models/Admin";
+import bcrypt from "bcryptjs";
+
+export async function POST(req: Request) {
+  try {
+    console.log("🔍 [ADMIN LOGIN] Starting...");
+    
+    const { email, password } = await req.json();
+    console.log("🔍 [ADMIN LOGIN] Email:", email);
+
+    await dbConnect();
+    console.log("✅ [ADMIN LOGIN] DB Connected");
+
+    // Find admin by email
+    const admin = await Admin.findOne({ email });
+    console.log("🔍 [ADMIN LOGIN] Admin found:", !!admin);
+
+    if (!admin) {
+      console.log("❌ [ADMIN LOGIN] Admin not found");
+      return NextResponse.json(
+        { success: false, message: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, admin.password);
+    console.log("🔍 [ADMIN LOGIN] Password match:", isMatch);
+
+    if (!isMatch) {
+      console.log("❌ [ADMIN LOGIN] Password mismatch");
+      return NextResponse.json(
+        { success: false, message: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
+    // Check JWT secret
+    if (!process.env.JWT_ADMIN_SECRET) {
+      console.error("❌ [ADMIN LOGIN] JWT_ADMIN_SECRET not set!");
+      return NextResponse.json(
+        { success: false, message: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { adminId: admin._id, role: admin.role },
+      process.env.JWT_ADMIN_SECRET,
+      { expiresIn: "24h" }
+    );
+    console.log("✅ [ADMIN LOGIN] Token generated");
+
+    // Set cookie
+    const response = NextResponse.json({
+      success: true,
+      message: "Login successful",
+      admin: {
+        id: admin._id,
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+
+    response.cookies.set("admin_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 86400, // 24 hours
+    });
+
+    console.log("✅ [ADMIN LOGIN] Success");
+    return response;
+  } catch (error: any) {
+    console.error("❌ [ADMIN LOGIN] Error:", error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: "Server error",
+        details: error.message 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\logout\route.ts->
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  const res = NextResponse.json({ success: true });
+  res.cookies.set("admin_token", "", { maxAge: 0, path: "/" });
+  return res;
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\passes\route.ts->export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Pass from "@/models/Pass";
+import { verifyAdmin } from "@/lib/adminAuth";
+
+export async function GET() {
+  try {
+    verifyAdmin();
+    await dbConnect();
+
+    const passes = Pass.find().where("visible").equals(true).lean();
+
+    return NextResponse.json(passes);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json([], { status: 500 });
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\scan\route.ts->export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Booking from "@/models/Booking";
+
+export async function POST(req: Request) {
+  try {
+    await dbConnect();
+
+    const { bookingId }: { bookingId: string } = await req.json();
+
+    const booking = await Booking.findById(bookingId).exec();
+
+    if (!booking) {
+      return NextResponse.json(
+        { success: false, message: "Invalid ticket" },
+        { status: 404 }
+      );
+    }
+
+    if (booking.isUsed) {
+      return NextResponse.json(
+        { success: false, message: "Ticket already used" },
+        { status: 400 }
+      );
+    }
+
+    booking.isUsed = true;
+    booking.usedAt = new Date();
+    await booking.save();
+
+    return NextResponse.json({
+      success: true,
+      message: "Entry allowed",
+      booking,
+    });
+  } catch (err) {
+    console.error("Scan error:", err);
+    return NextResponse.json(
+      { success: false, message: "Scan failed" },
+      { status: 500 }
+    );
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\site\route.ts->export const dynamic = "force-dynamic";
+
+
+import { NextResponse } from "next/server";
+import connectDB  from "@/lib/db";
+import SiteContent from "@/models/SiteContent";
+import { verifyAdmin } from "@/lib/adminAuth";
+
+export async function GET() {
+  verifyAdmin();
+  await connectDB();
+  const content = await SiteContent.findOne().exec();
+  return NextResponse.json(content);
+}
+
+export async function POST(req: Request) {
+  await connectDB();
+  const body = await req.json();
+
+  const content = await SiteContent
+    .findOneAndUpdate({}, body, { upsert: true, new: true })
+    .exec();
+
+  return NextResponse.json(content);
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\verify\route.ts->import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Booking from "@/models/Booking";
+import { verifyAdmin } from "@/lib/adminAuth";
+
+export async function POST(req: Request) {
+  try {
+    verifyAdmin();
+    await dbConnect();
+
+    const { reference }: { reference: string } = await req.json();
+
+    if (!reference) {
+      return NextResponse.json(
+        { success: false, message: "Reference required" },
+        { status: 400 }
+      );
+    }
+
+    const booking = await Booking.findOne({ reference }).exec();
+
+    if (!booking) {
+      return NextResponse.json(
+        { success: false, message: "Invalid ticket" },
+        { status: 404 }
+      );
+    }
+
+    if (booking.isUsed) {
+      return NextResponse.json(
+        { success: false, message: "Ticket already used" },
+        { status: 409 }
+      );
+    }
+
+    booking.isUsed = true;
+    booking.usedAt = new Date();
+    await booking.save();
+
+    return NextResponse.json({
+      success: true,
+      message: "Entry verified successfully",
+      booking,
+    });
+  } catch (err) {
+    console.error("ADMIN VERIFY ERROR:", err);
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\admin\verify-reference\route.ts->
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Booking from "@/models/Booking";
+import { verifyAdmin } from "@/lib/adminAuth";
+
+export async function POST(req: Request) {
+  try {
+    verifyAdmin();
+    await dbConnect();
+
+    const { reference } = await req.json();
+    if (!reference) {
+      return NextResponse.json(
+        { success: false, message: "Reference required" },
+        { status: 400 }
+      );
+    }
+
+    const booking = await Booking.findOne({ reference });
+
+    if (!booking) {
+      return NextResponse.json(
+        { success: false, message: "Invalid pass" },
+        { status: 404 }
+      );
+    }
+
+    if (booking.isUsed) {
+      return NextResponse.json(
+        { success: false, message: "Pass already used" },
+        { status: 409 }
+      );
+    }
+
+    booking.isUsed = true;
+    booking.usedAt = new Date();
+    await booking.save();
+
+    return NextResponse.json({
+      success: true,
+      message: "Pass verified successfully",
+      booking,
+    });
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\auth\login\route.ts->export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import connectDB from "@/lib/db";
+import User from "@/models/User";
+
+export async function POST(req: Request) {
+  try {
+    await connectDB();
+
+    const { phone, password }: { phone: string; password: string } =
+      await req.json();
+
+    // Validate input
+    if (!phone || !password) {
+      return NextResponse.json(
+        { success: false, message: "Phone and password are required" },
+        { status: 400 }
+      );
+    }
+
+    // Find user
+    const user = await User.findOne({ phone }).exec();
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "User not found. Please sign up first.",
+        },
+        { status: 404 }
+      );
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { success: false, message: "Invalid password" },
+        { status: 401 }
+      );
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, phone: user.phone },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" }
+    );
+
+    const response = NextResponse.json({
+      success: true,
+      message: "Login successful",
+      user: {
+        id: user._id,
+        name: user.name,
+        phone: user.phone,
+      },
+    });
+
+    // Set HTTP-only cookie
+    response.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
+    });
+
+    return response;
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+    return NextResponse.json(
+      { success: false, message: "Login failed" },
+      { status: 500 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\auth\logout\route.ts->export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  const response = NextResponse.json({
+    success: true,
+    message: "Logged out successfully",
+  });
+
+  response.cookies.delete("auth_token");
+
+  return response;
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\auth\me\route.ts->export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import connectDB from "@/lib/db";
+import User from "@/models/User";
+
+export async function GET(req: Request) {
+  try {
+    const token = req.headers.get("cookie")?.split("auth_token=")[1]?.split(";")[0];
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+
+    await connectDB();
+    const user = await User.findById(decoded.userId).select("-password");
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        phone: user.phone,
+      },
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, message: "Invalid token" },
+      { status: 401 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\auth\signup\route.ts->
+export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import connectDB from "@/lib/db";
+import User from "@/models/User";
+
+export async function POST(req: Request) {
+  try {
+    await connectDB();
+    
+    const { name, phone, password } = await req.json();
+
+    // Validate input
+    if (!name || !phone || !password) {
+      return NextResponse.json(
+        { success: false, message: "All fields are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ phone });
+    if (existingUser) {
+      return NextResponse.json(
+        { success: false, message: "User with this phone number already exists" },
+        { status: 409 }
+      );
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = await User.create({
+      name,
+      phone,
+      password: hashedPassword,
+      bookings: [],
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Account created successfully",
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        phone: newUser.phone,
+      },
+    });
+  } catch (error: any) {
+    console.error("SIGNUP ERROR:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to create account" },
+      { status: 500 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\bookings\create\[id]\route.ts->export const dynamic = "force-dynamic";
+
+
+import { NextResponse } from "next/server";
+import  connectDB  from "@/lib/db";
+import Booking from "@/models/Booking";
+
+export async function GET(_: Request, { params }: any) {
+  await connectDB();
+  const booking = await Booking.findOne(params.id);
+  return NextResponse.json(booking);
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\bookings\create\route.ts->export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/db";
+import Booking from "@/models/Booking";
+
+export async function GET() {
+  await connectDB();
+
+  const bookings = await Booking.find()
+  .where("status").equals("PAID")
+  .sort({ createdAt: -1 })
+  .lean();
+
+
+  return NextResponse.json(bookings);
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\health\route.ts->// app/api/health/route.ts
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+
+export async function GET() {
+  try {
+    console.log("🔍 Starting health check...");
+    console.log("MongoDB URI exists:", !!process.env.MONGODB_URI);
+    
+    const mongoose = await dbConnect();
+    console.log("✅ DB Connected successfully");
+
+    // Try to list collections
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log("📦 Collections found:", collections.map(c => c.name));
+
+    return NextResponse.json({
+      status: "ok",
+      mongodb: "connected",
+      database: mongoose.connection.db.databaseName,
+      collections: collections.map(c => c.name),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("❌ Health check failed:", error);
+    return NextResponse.json(
+      {
+        status: "error",
+        error: error.message,
+        stack: error.stack,
+        mongodb_uri_defined: !!process.env.MONGODB_URI
+      },
+      { status: 500 }
+    );
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\logout\route.ts->export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  const res = NextResponse.json({ success: true });
+  res.cookies.delete("auth_token");
+  return res;
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\passes\route.ts->
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Pass from "@/models/Pass";
+
+export async function GET() {
+  try {
+    await dbConnect();
+
+    const passes = await Pass.find({}).lean();
+
+    const normalized = passes.map((p: any) => ({
+      ...p,
+      remainingCount:
+        typeof p.remainingCount === "number"
+          ? p.remainingCount
+          : p.name === "Classic"
+          ? 250
+          : p.name === "VIP"
+          ? 280
+          : p.name === "VVIP"
+          ? 170
+          : 0,
+    }));
+
+    return NextResponse.json(normalized);
+  } catch (error) {
+    console.error("🔥 PASSES API CRASH:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch passes" },
+      { status: 500 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\payments\order\route.ts->// FILE: app/api/payments/order/route.ts
+export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import Razorpay from "razorpay";
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+import dbConnect from "@/lib/db";
+import Booking from "@/models/Booking";
+import Pass from "@/models/Pass";
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
+
+export async function POST(req: Request) {
+  try {
+    await dbConnect();
+
+    const {
+      passId,
+      name,
+      email,
+      phone,
+      quantity,
+    }: {
+      passId: string;
+      name: string;
+      email: string;
+      phone: string;
+      quantity: number;
+    } = await req.json();
+
+    if (!passId || !name || !email || !phone || !quantity || quantity <= 0) {
+      return NextResponse.json(
+        { error: "Missing or invalid required fields" },
+        { status: 400 }
+      );
+    }
+
+    /* ------------------ FETCH PASS ------------------ */
+    const pass = await Pass.findById(passId).exec();
+    if (!pass) {
+      return NextResponse.json(
+        { error: "Pass not found" },
+        { status: 404 }
+      );
+    }
+
+    const totalAmount = pass.price * quantity;
+
+    /* ------------------ GET USER FROM COOKIE ------------------ */
+    let userId: string | undefined;
+
+    try {
+      const token = cookies().get("auth_token")?.value;
+      if (token) {
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET!
+        ) as { userId: string };
+        userId = decoded.userId;
+      }
+    } catch {
+      userId = undefined;
+    }
+
+    /* ------------------ CREATE BOOKING ------------------ */
+    const booking = await Booking.create({
+      userId,
+      passId: pass._id,
+      passName: pass.name,
+      name,
+      email,
+      phone,
+      quantity,
+      amount: totalAmount,
+      status: "PENDING",
+      reference: crypto.randomBytes(6).toString("hex").toUpperCase(),
+    });
+
+    /* ------------------ CREATE RAZORPAY ORDER ------------------ */
+    const order = await razorpay.orders.create({
+      amount: totalAmount * 100, // in paise
+      currency: "INR",
+      receipt: booking._id.toString(),
+    });
+
+    booking.razorpayOrderId = order.id;
+    await booking.save();
+
+    return NextResponse.json({
+      orderId: order.id,
+      amount: order.amount,
+      bookingId: booking._id,
+      currency: "INR",
+    });
+  } catch (err) {
+    console.error("ORDER ERROR:", err);
+    return NextResponse.json(
+      { error: "Failed to create order" },
+      { status: 500 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\payments\verify\route.ts->export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import crypto from "crypto";
+import mongoose from "mongoose";
+import dbConnect from "@/lib/db";
+import Booking from "@/models/Booking";
+import User from "@/models/User";
+import QRCode from "qrcode";
+import { cookies } from "next/headers";
+import Pass from "@/models/Pass";
+
+export async function POST(req: Request) {
+  try {
+    await dbConnect();
+
+    const {
+      bookingId,
+      razorpay_payment_id,
+      razorpay_order_id,
+      razorpay_signature,
+    } = await req.json();
+
+    /* ---------- BASIC VALIDATION ---------- */
+    if (
+      !bookingId ||
+      !razorpay_payment_id ||
+      !razorpay_order_id ||
+      !razorpay_signature
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Missing payment fields" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- OBJECT ID SAFETY ---------- */
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid booking ID" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- ENV SAFETY ---------- */
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      console.error("RAZORPAY_KEY_SECRET is missing");
+      return NextResponse.json(
+        { success: false, message: "Payment configuration error" },
+        { status: 500 }
+      );
+    }
+
+    /* ---------- FETCH BOOKING ---------- */
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return NextResponse.json(
+        { success: false, message: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
+    /* ---------- VERIFY SIGNATURE ---------- */
+    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      return NextResponse.json(
+        { success: false, message: "Invalid payment signature" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- IDEMPOTENCY ---------- */
+    if (booking.status === "PAID") {
+      return NextResponse.json({
+        success: true,
+        message: "Payment already verified",
+      });
+    }
+
+    /* ---------- MARK AS PAID ---------- */
+    booking.status = "PAID";
+    booking.paymentId = razorpay_payment_id;
+    booking.orderId = razorpay_order_id;
+    booking.paidAt = new Date();
+
+    /* ---------- REDUCE PASS COUNT (CRITICAL) ---------- */
+    try {
+      const pass = await Pass.findById(booking.passId);
+
+      if (pass) {
+        pass.remainingCount = Math.max(
+          pass.remainingCount - booking.quantity,
+          0
+        );
+        await pass.save();
+      }
+    } catch (passErr) {
+      console.error("Pass count update failed:", passErr);
+      // ❌ Do NOT fail payment because of count
+    }
+
+    /* ---------- QR (NON-BLOCKING) ---------- */
+    try {
+      const qrPayload = JSON.stringify({
+        bookingId: booking._id.toString(),
+        reference: booking.reference,
+      });
+      booking.qrCode = await QRCode.toDataURL(qrPayload);
+    } catch (qrErr) {
+      console.error("QR generation failed (ignored):", qrErr);
+    }
+
+    /* ---------- USER LINKING (NON-BLOCKING) ---------- */
+    try {
+      const token = cookies().get("auth_token")?.value;
+      if (token) {
+        const payload = JSON.parse(
+          Buffer.from(token.split(".")[1], "base64").toString()
+        );
+        const user = await User.findById(payload.userId);
+        if (user && !user.bookings.includes(booking._id)) {
+          booking.userId = user._id;
+          user.bookings.push(booking._id);
+          await user.save();
+        }
+      }
+    } catch (userErr) {
+      console.error("User linking failed (ignored):", userErr);
+    }
+
+    await booking.save();
+
+    return NextResponse.json({
+      success: true,
+      message: "Payment verified successfully",
+    });
+  } catch (err) {
+    console.error("VERIFY ROUTE FATAL ERROR:", err);
+    return NextResponse.json(
+      { success: false, message: "Payment verification failed" },
+      { status: 500 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\test-razorpay\route.ts->export const dynamic = "force-dynamic";
+
+
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json({
+    key: process.env.RAZORPAY_KEY_ID ? "Loaded" : "Missing",
+    secret: process.env.RAZORPAY_KEY_SECRET ? "Loaded" : "Missing",
+  });
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\ticket\[id]\download\route.ts->export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import BookingModel from "@/models/Booking";
+import QRCode from "qrcode";
+
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await dbConnect();
+    const Booking = BookingModel as any;
+
+    const booking = await Booking.findById(params.id);
+    if (!booking || booking.status !== "PAID") {
+      return NextResponse.json(
+        { success: false, message: "Ticket not found or unpaid" },
+        { status: 404 }
+      );
+    }
+
+    // Fallback QR generation (for older bookings)
+    if (!booking.qrCode) {
+      booking.qrCode = await QRCode.toDataURL(
+        JSON.stringify({
+          bookingId: booking._id.toString(),
+          reference: booking.reference,
+        })
+      );
+      await booking.save();
+    }
+
+    return NextResponse.json({
+      success: true,
+      ticket: {
+        name: booking.name,
+        passName: booking.passName,
+        quantity: booking.quantity,
+        reference: booking.reference,
+        qrCode: booking.qrCode,
+      },
+    });
+  } catch (err) {
+    console.error("FETCH TICKET ERROR:", err);
+    return NextResponse.json(
+      { success: false, message: "Failed to load ticket" },
+      { status: 500 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\ticket\[id]\route.ts->
+export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import BookingModel from "@/models/Booking";
+import QRCode from "qrcode";
+
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await dbConnect();
+    const Booking = BookingModel as any;
+
+    const booking = await Booking.findById(params.id);
+    if (!booking || booking.status !== "PAID") {
+      return NextResponse.json(
+        { success: false, message: "Ticket not found or unpaid" },
+        { status: 404 }
+      );
+    }
+
+    // Ensure QR exists (fallback for old bookings)
+    if (!booking.qrCode) {
+      booking.qrCode = await QRCode.toDataURL(
+        JSON.stringify({
+          bookingId: booking._id.toString(),
+          reference: booking.reference,
+        })
+      );
+      await booking.save();
+    }
+
+    return NextResponse.json({
+      success: true,
+      ticket: {
+        name: booking.name,
+        passName: booking.passName,
+        quantity: booking.quantity,
+        reference: booking.reference,
+        qrCode: booking.qrCode,
+      },
+    });
+  } catch (err) {
+    console.error("FETCH TICKET ERROR:", err);
+    return NextResponse.json(
+      { success: false, message: "Failed to load ticket" },
+      { status: 500 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\user\bookings\route.ts->export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+import connectDB from "@/lib/db";
+import Booking from "@/models/Booking";
+
+export async function GET() {
+  try {
+    await connectDB();
+
+    const token = cookies().get("auth_token")?.value;
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+
+    const bookings = await Booking.find({
+      userId: decoded.userId,
+      status: "PAID",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return NextResponse.json({
+      success: true,
+      bookings,
+    });
+  } catch (error) {
+    console.error("FETCH BOOKINGS ERROR:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch bookings" },
+      { status: 500 }
+    );
+  }
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\user\route.ts->
+// app/api/user/route.ts
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  // Simulate fetching user data
+  const user = { name: 'Test User' };
+  return NextResponse.json(user);
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\login.ts->
+// app/api/login.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import connectToDatabase from '../../lib/mongodb';
+import User, { IUser } from '../../models/User'; // import IUser
+
+import { signToken } from '../../lib/auth';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const { identifier, password } = req.body;
+
+  await connectToDatabase();
+
+  // Find by number or name with explicit type
+  const user = await User.findOne({
+    $or: [{ number: identifier }, { name: identifier }],
+  }) as IUser | null; // cast result to IUser
+
+  if (!user || user.password !== password) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  const token = signToken(user._id.toString());
+  res.status(200).json({ token, name: user.name });
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\my-tickets.ts->
+import { NextApiRequest, NextApiResponse } from 'next';
+import connectToDatabase from '../../lib/mongodb';
+import Booking from '../../models/Booking';
+import jwt from 'jsonwebtoken';
+
+interface MyJwtPayload {
+  adminId: string;
+  // add other properties if your token payload includes more
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const authToken = req.headers.authorization?.replace("Bearer ", "");
+  if (!authToken) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET!) as MyJwtPayload;
+    const userId = decoded.adminId; 
+    await connectToDatabase();
+    const bookings = await Booking.find({ user: userId });
+    res.json(bookings);
+  } catch {
+    res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\save-user.ts->
+
+import type { NextApiRequest, NextApiResponse } from 'next';
+import connectToDatabase from '../../lib/mongodb';
+import User from '../../models/User';
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method === 'POST') {
+    const { name, number } = req.body as { name: string; number: string };
+
+    try {
+      await connectToDatabase();
+
+      // Save user info
+      const newUser = new User({ name, number });
+      await newUser.save();
+
+      res.status(200).json({ message: 'User saved' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to save user' });
+    }
+  } else {
+    res.status(405).json({ error: 'Method not allowed' });
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\send-otp.ts->
+
+// pages/api/send-otp.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import twilio from 'twilio';
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID as string;
+const authToken = process.env.TWILIO_AUTH_TOKEN as string;
+const client = twilio(accountSid, authToken);
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method === 'POST') {
+    const { number } = req.body as { number: string };
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Send OTP via Twilio
+    try {
+      await client.messages.create({
+        body: `Your OTP is ${otp}`,
+        from: process.env.TWILIO_PHONE_NUMBER as string,
+        to: number,
+      });
+      
+      // Save OTP in your database/cache here (not implemented)
+      
+      res.status(200).json({ message: 'OTP sent' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to send OTP' });
+    }
+  } else {
+    res.status(405).json({ error: 'Method not allowed' });
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\signup.ts->
+// app/api/signup.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import connectToDatabase from '../../lib/mongodb';
+import User from '../../models/User';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const { name, number, password } = req.body;
+
+  await connectToDatabase();
+
+  const existingUser = await User.findOne({ number });
+  if (existingUser) return res.status(400).json({ error: 'User already exists' });
+
+  const newUser = new User({ name, number, password });
+  await newUser.save();
+
+  res.status(200).json({ message: 'Signup successful' });
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\users.ts->
+// pages/api/users.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import connectToDatabase from '../../lib/mongodb';
+import User from '../../models/User';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  await connectToDatabase();
+
+  if (req.method === 'POST') {
+    const { name, number } = req.body;
+    try {
+      const newUser = new User({ name, number });
+      await newUser.save();
+      res.status(200).json({ message: 'User saved successfully' });
+    } catch (error) {
+      res.status(500).json({ error: 'Error saving user' });
+    }
+  } else if (req.method === 'GET') {
+    try {
+      const users = await User.find({});
+      res.status(200).json(users);
+    } catch (error) {
+      res.status(500).json({ error: 'Error fetching users' });
+    }
+  } else {
+    res.status(405).json({ error: 'Method Not Allowed' });
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\api\verify-otp.ts->
+// pages/api/verify-otp.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  const { otp, phoneNumber } = req.body;
+
+  // For testing: if OTP is '1234', log in directly
+  if (otp === '1234') {
+    const token = 'dummy-auth-token';
+    return res.status(200).json({
+      message: 'OTP verified (test mode). User logged in.',
+      token,
+      phoneNumber,
+    });
+  }
+
+  // Uncomment and implement Twilio verification here
+  /*
+  const accountSid = process.env.TWILIO_ACCOUNT_SID!;
+  const authToken = process.env.TWILIO_AUTH_TOKEN!;
+  const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID!;
+
+  const client = new Twilio(accountSid, authToken);
+
+  try {
+    const verificationCheck = await client.verify
+      .services(verifyServiceSid)
+      .verificationChecks.create({ to: phoneNumber, code: otp });
+
+    if (verificationCheck.status === 'approved') {
+      // OTP verified successfully, generate your auth token here
+      const token = 'your-generated-jwt-or-token';
+
+      return res.status(200).json({
+        message: 'OTP verified.',
+        token,
+        phoneNumber,
+      });
+    } else {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+  } catch (error) {
+    console.error('Twilio verification error:', error);
+    return res.status(500).json({ message: 'Verification failed', error: error.message });
+  }
+  */
+
+  // If OTP is not '1234', return invalid
+  return res.status(400).json({ message: 'Invalid OTP' });
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\my-tickets\page.tsx->"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+export default function MyTicketsPage() {
+  const router = useRouter();
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  // ✅ FIX 1: auth check must include credentials
+  const checkAuth = async () => {
+    try {
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        router.push("/");
+        return;
+      }
+
+      setUser(data.user);
+      await fetchBookings();
+    } catch (error) {
+      router.push("/");
+    }
+  };
+
+  // ✅ FIX 2: bookings fetch must include credentials
+  const fetchBookings = async () => {
+    try {
+      const response = await fetch("/api/user/bookings", {
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setBookings(data.bookings);
+      }
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white text-xl">Loading your tickets...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen py-20 px-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gold mb-2">My Tickets</h1>
+            <p className="text-gray-300">Welcome back, {user?.name}!</p>
+          </div>
+
+          <Link href="/">
+            <button className="bg-white/10 border border-gold/30 text-white px-6 py-3 rounded-lg hover:bg-white/20 transition">
+              ← Back to Home
+            </button>
+          </Link>
+        </div>
+
+        {bookings.length === 0 ? (
+          <div className="bg-black/40 border border-gold/30 rounded-2xl p-12 text-center">
+            <div className="text-6xl mb-4">🎟️</div>
+            <h2 className="text-2xl font-bold text-white mb-4">
+              No Tickets Yet
+            </h2>
+            <p className="text-gray-400 mb-6">
+              You haven't booked any tickets yet. Get your pass now!
+            </p>
+            <Link href="/#passes">
+              <button className="bg-gold text-black px-8 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition">
+                Browse Passes
+              </button>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6">
+            {bookings.map((booking) => (
+              <div
+                key={booking._id}
+                className="bg-gradient-to-br from-red-900/40 to-black border border-gold/30 rounded-2xl p-6 hover:border-gold/60 transition"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gold">
+                    {booking.passName}
+                  </h3>
+                  <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                    {booking.status}
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-300 mb-4">
+                  <p><strong>Reference:</strong> {booking.reference}</p>
+                  <p><strong>Quantity:</strong> {booking.quantity} tickets</p>
+                  <p><strong>Amount:</strong> ₹{booking.amount}</p>
+                  <p>
+                    <strong>Booked on:</strong>{" "}
+                    {new Date(booking.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Link href={`/ticket/${booking._id}`} className="flex-1">
+                    <button className="w-full bg-gold text-black py-3 rounded-lg font-semibold hover:bg-yellow-600 transition">
+                      View Ticket
+                    </button>
+                  </Link>
+
+                  <button
+                    onClick={() =>
+                      window.open(`/ticket/${booking._id}`, "_blank")
+                    }
+                    className="bg-white/10 border border-gold/30 text-white px-4 py-3 rounded-lg hover:bg-white/20 transition"
+                    title="Print"
+                  >
+                    🖨️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\test-passes\page.tsx->
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function TestPasses() {
+  const [data, setData] = useState<any[]>([]);
+
+  useEffect(() => {
+    console.log("🔥 TEST FETCH RUNNING");
+
+    fetch("/api/admin/passes")
+      .then(res => res.json())
+      .then(d => {
+        console.log("🔥 TEST DATA", d);
+        setData(d);
+      });
+  }, []);
+
+  return (
+    <div style={{ color: "white", padding: 40 }}>
+      <h1>TEST PASSES</h1>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\ticket\[id]\page.tsx->
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function TicketPage({ params }: { params: { id: string } }) {
+  const [ticket, setTicket] = useState<any>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch(`/api/ticket/${params.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data?.success) setError(data?.message || "Failed to load ticket");
+        else setTicket(data.ticket);
+      })
+      .catch(() => setError("Failed to load ticket"));
+  }, [params.id]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    );
+  }
+
+  if (!ticket) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Loading ticket...
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center p-6 print:p-0"
+      style={{
+        backgroundImage: "url('/hero.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* TICKET CARD */}
+      <div
+        className="ticket-card relative max-w-md w-full rounded-3xl p-6 shadow-2xl text-white print:shadow-none"
+        style={{
+          background:
+            "linear-gradient(135deg, #3b0a0a, #7a1212, #b8860b)",
+        }}
+      >
+        {/* SOFT GLOW OVERLAY */}
+        <div className="absolute inset-0 rounded-3xl bg-black/20 pointer-events-none" />
+
+        <div className="relative z-10 text-center">
+          {/* LOGO + TITLE (FIXED ALIGNMENT) */}
+          <div className="flex flex-col items-center mb-4">
+            <img
+              src="/logo.png"
+              alt="The Red Carpet Logo"
+              className="h-16 mb-2"
+            />
+
+            <h1 className="text-2xl font-bold tracking-wide">
+              THE RED CARPET
+            </h1>
+            <p className="text-sm tracking-widest opacity-90">
+              NEW YEAR EVE
+            </p>
+          </div>
+
+          <p className="text-sm opacity-90 mb-5">
+            Official Entry Pass
+          </p>
+
+          {/* DETAILS */}
+          <div className="space-y-1 text-base mb-5">
+            <p><b>Name:</b> {ticket.name}</p>
+            <p><b>Pass:</b> {ticket.passName}</p>
+            <p><b>Quantity:</b> {ticket.quantity}</p>
+            <p><b>Reference:</b> {ticket.reference}</p>
+          </div>
+
+          {/* QR CODE */}
+          <div className="my-6 flex justify-center">
+            <div className="bg-white p-3 rounded-xl">
+              <img
+                src={ticket.qrCode}
+                alt="QR Code"
+                className="w-44 h-44"
+              />
+            </div>
+          </div>
+
+          <p className="text-xs opacity-80 mb-6">
+            Scan this QR code at the venue entrance
+          </p>
+
+          {/* ACTIONS */}
+          <div className="space-y-2 print:hidden">
+            <button
+              onClick={() => window.print()}
+              className="w-full bg-black py-3 rounded-lg font-medium"
+            >
+              Print / Save as PDF
+            </button>
+
+            <button
+              className="w-full bg-white/90 text-black py-2 rounded-lg"
+              onClick={() => alert("Email sending will be enabled soon")}
+            >
+              Send to Email
+            </button>
+
+            <button
+              className="w-full bg-white/90 text-black py-2 rounded-lg"
+              onClick={() => alert("WhatsApp sending will be enabled soon")}
+            >
+              Send to WhatsApp
+            </button>
+
+            <button
+              onClick={() => window.history.back()}
+              className="w-full border border-white py-2 rounded-lg"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\globals.css->@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #0F0F0F;
+  color: white;
+}
+html {
+  scroll-behavior: smooth;
+}
+
+@media print {
+  body {
+    background: #5a0f0f !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  .ticket-card {
+    background: linear-gradient(
+      135deg,
+      #3b0a0a,
+      #7a1212,
+      #b8860b
+    ) !important;
+    color: white !important;
+    border-radius: 20px !important;
+    padding: 24px !important;
+  }
+
+  @keyframes lantern {
+  from {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(-120vh);
+    opacity: 0;
+  }
+}
+.animate-lantern {
+  animation: lantern 18s linear infinite;
+}
+
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\layout.tsx->import "./globals.css";
+import { ReactNode } from "react";
+
+export const metadata = {
+  title: "THE RED CARPET | New Year Eve 2025 | Bhopal",
+  description: "Central India's Biggest Open-Air New Year Celebration"
+};
+
+export default function RootLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <head>
+        {/* Load Razorpay early */}
+        <script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          async
+        />
+      </head>
+      <body className="relative text-white">
+        {/* GLOBAL BACKGROUND IMAGE */}
+        <div
+          className="fixed inset-0 -z-20"
+          style={{
+            backgroundImage: "url('/hero-bg.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat"
+          }}
+        />
+
+        {/* LIGHT OVERLAY */}
+        <div
+          className="fixed inset-0 -z-10"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.35)"
+          }}
+        />
+
+        {children}
+      </body>
+    </html>
+  );
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\app\page.tsx->
+"use client";
+export const dynamic = "force-dynamic";
+
+import { motion } from "framer-motion";
+import FloatingLanterns from "@/components/FloatingLanterns";
+import Passes from "@/components/Passes";
+import VVIP from "@/components/VVIP";
+import LayoutMap from "@/components/LayoutMap";
+import Header from "@/components/Header";
+
+export default function App() {
+  return (
+    <div>
+      {/* Header with Login/Sign Up Buttons */}
+      <Header />
+
+      <main className="relative text-white">
+
+        {/* HERO SECTION */}
+        <section
+          className="relative min-h-screen flex flex-col items-center justify-center text-center px-6"
+          style={{
+            backgroundImage:
+              "url(https://images.unsplash.com/photo-1541532713592-79a0317b6b77)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <div className="absolute inset-0 bg-black/70" />
+          <FloatingLanterns />
+
+          <motion.img
+            src="/logo.png"
+            alt="The Red Carpet Logo"
+            className="w-120 mb-12 z-20 animate-fadeInScale"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1 }}
+                       />
+
+          <motion.h1
+            className="text-5xl md:text-7xl font-bold text-gold z-10"
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            THE RED CARPET
+          </motion.h1>
+
+          <motion.p
+            className="mt-4 text-lg md:text-xl text-gray-200 z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            Central India's Biggest Open-Air New Year Celebration
+          </motion.p>
+
+          <motion.p
+            className="mt-2 text-gray-300 z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+          >
+            31st December 2025 · Amber by Sayaji, Bhopal
+          </motion.p>
+
+          <motion.a
+            href="#passes"
+            className="mt-10 px-10 py-4 bg-redcarpet rounded-xl text-lg hover:bg-gold hover:text-black transition z-10"
+            whileHover={{ scale: 1.05 }}
+          >
+            Reserve Your Entry
+          </motion.a>
+        </section>
+        
+
+        {/* EVENT LINEUP */}
+        <section className="py-24 px-6 bg-black">
+          <h2 className="text-4xl font-bold text-gold text-center mb-14">
+            The Night Unfolds
+          </h2>
+          <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+            {[
+              {
+                title: "Live DJs & EDM",
+                img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
+              },
+              {
+                title: "Fire Performers",
+                img: "https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2",
+              },
+              {
+                title: "Midnight Fireworks",
+                img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7RichB_N8T-Fnhz6j3B6rqqx7LH_WUGNbYWOnTn-7ssQXAI4kaK8UzyFnWwQBBusvtwtduw&s",
+              },
+            ].map((item) => (
+              <motion.div
+                key={item.title}
+                className="rounded-xl overflow-hidden bg-black/60 border border-gold/20"
+                whileHover={{ scale: 1.03 }}
+              >
+                <img src={item.img} className="h-56 w-full object-cover" />
+                <div className="p-6 text-center text-lg">{item.title}</div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* PASSES */}
+        <Passes />
+
+        {/* VVIP */}
+        <VVIP />
+
+        {/* EVENT MAP */}
+        <LayoutMap />
+
+        {/* FOOTER */}
+        <footer className="py-12 text-center text-gray-300 bg-black/90">
+          <p>📍 Amber by Sayaji, Bhopal</p>
+          <p>📞 +91 7000443100</p>
+          <p className="mt-4 text-sm">© 2025 THE RED CARPET. All rights reserved.</p>
+        </footer>
+      </main>
+    </div>
+  );
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\admin\live\page.tsx->
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function LiveEditorPage() {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/site")
+      .then(res => res.json())
+      .then(setData);
+  }, []);
+
+  function updateField(key: string, value: string | boolean) {
+    setData({ ...data, [key]: value });
+  }
+
+  async function save() {
+    await fetch("/api/admin/site", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    alert("Live site updated");
+  }
+
+  if (!data) return <p>Loading...</p>;
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <h2 className="text-3xl text-gold">Live Page Editor</h2>
+
+      <input
+        className="w-full p-3 bg-black border"
+        value={data.heroTitle}
+        onChange={e => updateField("heroTitle", e.target.value)}
+      />
+
+      <input
+        className="w-full p-3 bg-black border"
+        value={data.heroSubtitle}
+        onChange={e => updateField("heroSubtitle", e.target.value)}
+      />
+
+      <textarea
+        className="w-full p-3 bg-black border"
+        value={data.eventDescription}
+        onChange={e => updateField("eventDescription", e.target.value)}
+      />
+
+      <label className="flex gap-3 items-center">
+        <input
+          type="checkbox"
+          checked={data.animationsEnabled}
+          onChange={e =>
+            updateField("animationsEnabled", e.target.checked)
+          }
+        />
+        Enable animations
+      </label>
+
+      <button
+        onClick={save}
+        className="px-6 py-3 bg-gold text-black rounded"
+      >
+        Save Changes
+      </button>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\admin\AdminPassesClient.tsx->
+"use client";
+
+import { useEffect, useState } from "react";
+
+type PassType = {
+  name: string;
+  price: number;
+  phase: number;
+  visible: boolean;
+};
+
+export default function AdminPassesClient() {
+  const [passes, setPasses] = useState<PassType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/passes")
+      .then(res => res.json())
+      .then(data => {
+        setPasses(data);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return <p className="text-white">Loading passes…</p>;
+  }
+
+  return (
+    <div className="text-white">
+      <h1 className="text-3xl font-bold text-gold mb-8">
+        Pass & Phase Management
+      </h1>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        {passes.map(pass => (
+          <div
+            key={pass.name}
+            className="p-6 bg-black/60 border border-gold/30 rounded-xl rounded-xl"
+          >
+            <h2 className="text-xl font-semibold text-gold mb-4">
+              {pass.name}
+            </h2>
+
+            <p>Price: ₹{pass.price}</p>
+            <p>Phase: {pass.phase}</p>
+            <p>Status: {pass.visible ? "Visible" : "Hidden"}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\BookingModal.tsx->
+"use client";
+
+import { useState } from "react";
+
+export default function BookingModal({
+  pass,
+  onClose,
+  onSubmit,
+}: {
+  pass: any;
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [qty, setQty] = useState(1);
+
+  const total = pass.price * qty;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-black border border-gold/30 rounded-xl p-6 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-gold mb-4">
+          Book {pass.name}
+        </h2>
+
+        <input
+          className="w-full mb-3 p-2 bg-black border border-gold/30 rounded"
+          placeholder="Full Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+
+        <input
+          className="w-full mb-3 p-2 bg-black border border-gold/30 rounded"
+          placeholder="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          className="w-full mb-3 p-2 bg-black border border-gold/30 rounded"
+          placeholder="Mobile Number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+
+        <input
+          className="w-full mb-4 p-2 bg-black border border-gold/30 rounded"
+          type="number"
+          min={1}
+          max={10}
+          value={qty}
+          onChange={(e) => setQty(Number(e.target.value))}
+        />
+
+        <div className="text-lg mb-4">
+          Total: <span className="text-gold">₹{total}</span>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 border border-gold/40 rounded"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={() =>
+              onSubmit({ name, email, phone, qty, total })
+            }
+            className="flex-1 py-2 bg-gold text-black rounded font-semibold"
+          >
+            Proceed to Pay
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\FetchUsers.tsx->// components/FetchUsers.tsx
+import { useEffect, useState } from 'react';
+
+interface User {
+  _id: string;
+  name: string;
+  number: string;
+}
+
+const FetchUsers = () => {
+  const [users, setUsers] = useState<User[]>([]);
+
+  const fetchUsers = async () => {
+    const response = await fetch('/api/users');
+    const data: User[] = await response.json();
+    setUsers(data);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  return (
+    <div>
+      <h2>User List</h2>
+      <ul>
+        {users.map((user) => (
+          <li key={user._id}>
+            {user.name} - {user.number}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default FetchUsers;
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\floatinglantern2.tsx->"use client";
+
+export default function FloatingLanterns() {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0">
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute bottom-[-20%] animate-lantern"
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${i * 2}s`,
+          }}
+        >
+          <img src="/lantern.png" className="w-24 opacity-60" />
+          <p className="text-gold text-sm text-center">
+            Book Now · Limited Passes
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\FloatingLanterns.tsx->
+"use client";
+
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+
+type Lantern = {
+  left: number;
+  delay: number;
+  duration: number;
+};
+
+export default function FloatingLanterns() {
+  const [lanterns, setLanterns] = useState<Lantern[]>([]);
+
+  useEffect(() => {
+    const data = Array.from({ length: 8 }).map(() => ({
+      left: Math.random() * 100,
+      delay: Math.random() * 6,
+      duration: 12 + Math.random() * 6,
+    }));
+    setLanterns(data);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {lanterns.map((lantern, i) => (
+        <motion.div
+          key={i}
+          className="absolute bottom-0 w-6 h-10 bg-gradient-to-b from-yellow-300 to-orange-500 rounded-full opacity-70 blur-sm"
+          style={{ left: `${lantern.left}%` }}
+          animate={{ y: [-20, -900], opacity: [0, 1, 0] }}
+          transition={{
+            duration: lantern.duration,
+            repeat: Infinity,
+            delay: lantern.delay,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\Header.tsx-"use client";
+
+import { useState, useEffect } from "react";
+import LoginModal from "./LoginModal";
+import SignupModal from "./SignupModal";
+import Link from "next/link";
+
+export default function Header() {
+  const [user, setUser] = useState<any>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.success) setUser(data.user);
+    } catch {
+      setUser(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    setUser(null);
+    window.location.href = "/";
+  };
+
+  return (
+    <>
+      <div className="fixed top-0 right-0 z-50 p-4 flex gap-3">
+        {user ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="bg-gold text-black px-6 py-3 rounded-full font-semibold"
+            >
+              👤 {user.name}
+            </button>
+
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-black border border-gold/30 rounded-lg">
+                <Link
+                  href="/my-tickets"
+                  className="block px-4 py-3 text-white hover:bg-gold/20"
+                >
+                  🎟️ My Tickets
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-3 text-red-400"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <button onClick={() => setShowLogin(true)}>Login</button>
+            <button onClick={() => setShowSignup(true)}>Sign Up</button>
+          </>
+        )}
+      </div>
+
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onSuccess={(u) => {
+            setUser(u);
+            setShowLogin(false);
+          }}
+          onSwitchToSignup={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
+        />
+      )}
+
+      {showSignup && (
+        <SignupModal
+          onClose={() => setShowSignup(false)}
+          onSuccess={() => setShowSignup(false)}
+          onSwitchToLogin={() => {
+            setShowSignup(false);
+            setShowLogin(true);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\Lanterns.tsx->
+"use client";
+
+export default function Lanterns() {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0">
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute bottom-[-20%] animate-lantern"
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${i * 2}s`,
+          }}
+        >
+          <img
+            src="/lantern.png"
+            className="w-24 opacity-60"
+          />
+          <p className="text-gold text-sm text-center mt-1">
+            Book Now · Limited Passes
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\LayoutMap.tsx->export default function LayoutMap() {
+  return (
+    <section className="py-24 px-6 bg-transparent">
+      <h2 className="text-4xl font-bold text-gold text-center mb-8">
+        Event Layout
+      </h2>
+
+      <p className="text-center text-gray-400 mb-12">
+        View the complete venue layout including VVIP, VIP, stage, buffet and bar areas.
+      </p>
+
+      <div className="max-w-5xl mx-auto">
+        <img
+          src="/layout.jpg"
+          alt="Event Layout"
+          className="rounded-2xl border border-gold/30"
+        />
+      </div>
+    </section>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\LoginModal.tsx->
+"use client";
+
+import { useState } from "react";
+
+interface LoginModalProps {
+  onClose: () => void;
+  onSuccess: (user: any) => void;
+  onSwitchToSignup: () => void;
+}
+
+export default function LoginModal({ onClose, onSuccess, onSwitchToSignup }: LoginModalProps) {
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!phone || !password) {
+      setError("All fields are required");
+      return;
+    }
+
+    if (phone.length !== 10) {
+      setError("Phone number must be 10 digits");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        onSuccess(data.user);
+        onClose();
+      } else {
+        setError(data.message || "Login failed");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-br from-red-900 to-black border-2 border-gold p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <h2 className="text-3xl font-bold text-gold text-center mb-6">
+          Login
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-white mb-2 text-sm">Phone Number</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+              maxLength={10}
+              className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
+              placeholder="10-digit mobile number"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-2 text-sm">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
+              placeholder="Enter your password"
+            />
+          </div>
+
+          {error && (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gold text-black py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+
+          <div className="text-center text-sm text-gray-300">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              onClick={onSwitchToSignup}
+              className="text-gold hover:underline font-semibold"
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full mt-2 border border-gold/40 text-white py-3 rounded-lg hover:bg-white/10 transition"
+          >
+            Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\NightUnfolds.tsx->
+
+"use client";
+
+export default function NightUnfolds() {
+  return (
+    <section className="py-24 px-6 bg-black">
+      <h2 className="text-4xl font-bold text-gold text-center mb-14">
+        The Night Unfolds
+      </h2>
+
+      <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+        {[
+          {
+            title: "Live DJs & EDM",
+            video: "/Techno Mix 2025   Nonstop  Only Techno Bangers.mp4",
+          },
+          {
+            title: "Fire Performers",
+            video: "/Giant fire poi.mp4",
+          },
+          {
+            title: "Midnight Fireworks",
+            video: "/_✨ Spectacular New Year Fireworks 2025 🎆 HappyNewYear Fireworks2025_.mp4",
+          },
+        ].map((item) => (
+          <div
+            key={item.title}
+            className="rounded-xl overflow-hidden border border-gold/20"
+          >
+            <video
+              src={item.video}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="h-56 w-full object-cover brightness-75"
+            />
+            <div className="p-6 text-center text-lg bg-black/70">
+              {item.title}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\Passes.tsx->
+"use client";
+
+import { useEffect, useState } from "react";
+import BookingModal from "./BookingModal";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+export default function Passes() {
+  const [passes, setPasses] = useState<any[]>([]);
+  const [totalRemaining, setTotalRemaining] = useState(0);
+  const [selectedPass, setSelectedPass] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+
+  /* ------------------ FETCH PASSES ------------------ */
+  useEffect(() => {
+    let mounted = true;
+    let interval: any = null;
+
+    const fetchPasses = async () => {
+      try {
+        const res = await fetch("/api/passes", { cache: "no-store" });
+
+        if (!res.ok) {
+          console.error("Passes API failed:", res.status);
+          clearInterval(interval);
+          return;
+        }
+
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+
+        if (mounted) {
+          setPasses(data);
+          setTotalRemaining(
+            data.reduce(
+              (sum: number, p: any) => sum + (p.remainingCount || 0),
+              0
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Fetch passes error:", err);
+        clearInterval(interval);
+      }
+    };
+
+    fetchPasses();
+    interval = setInterval(fetchPasses, 15000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  /* ------------------ FETCH USER ------------------ */
+  useEffect(() => {
+    fetch("/api/auth/me", {
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        console.log("🔍 User fetch result:", data); // Debug log
+        setUser(data?.success ? data.user : null);
+      })
+      .catch((err) => {
+        console.error("User fetch error:", err);
+        setUser(null);
+      });
+  }, []);
+
+  const handleBookNowClick = (pass: any) => {
+    console.log("🔍 Book Now clicked", { pass, user }); // Debug log
+    
+    if (!user) {
+      console.log("🔍 User not logged in, showing prompt");
+      setShowAuthPrompt(true);
+      setTimeout(() => setShowAuthPrompt(false), 3000);
+      return;
+    }
+    
+    console.log("🔍 Setting selected pass");
+    setSelectedPass(pass);
+  };
+
+  const startPayment = async (pass: any, form: any) => {
+    console.log("🔍 Starting payment", { pass, form }); // Debug log
+    
+    // Check if Razorpay is loaded
+    if (!window.Razorpay) {
+      alert("Payment system is loading, please try again in a moment.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await fetch("/api/payments/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          passId: pass._id,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          quantity: form.qty,
+        }),
+      });
+
+      if (!res.ok) {
+        alert("Failed to create order");
+        return;
+      }
+
+      const data = await res.json();
+
+      const rzp = new window.Razorpay({
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        amount: data.amount,
+        currency: "INR",
+        name: "The Red Carpet",
+        description: pass.name,
+        order_id: data.orderId,
+        handler: async (response: any) => {
+          const verifyRes = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              bookingId: data.bookingId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+
+          const verify = await verifyRes.json();
+          if (verify.success) {
+            window.location.href = `/ticket/${data.bookingId}`;
+          } else {
+            alert("Payment verification failed");
+          }
+        },
+        theme: { color: "#C9A24D" },
+      });
+      
+      rzp.open();
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Payment failed. Please try again.");
+    } finally {
+      setLoading(false);
+      setSelectedPass(null);
+    }
+  };
+
+  return (
+    <>
+      <section id="passes" className="py-24 px-6 bg-black/60">
+        <h2 className="text-4xl font-bold text-gold text-center mb-6">
+          Passes
+        </h2>
+
+        {/* Auth Prompt */}
+        {showAuthPrompt && (
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+            ⚠️ Please login first to book passes
+          </div>
+        )}
+
+        <div className="text-center mb-10">
+          <div className="inline-block bg-red-900/80 border border-gold px-8 py-4 rounded-2xl">
+            <p className="text-xl font-bold text-gold">
+              🎟️ Available Passes: {totalRemaining}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {passes.length === 0 && (
+            <p className="col-span-3 text-center text-gray-400">
+              Passes will be available shortly.
+            </p>
+          )}
+
+          {passes.map((pass) => (
+            <div
+              key={pass._id}
+              className="border border-gold/30 p-6 rounded-xl text-center bg-black/50 transition hover:scale-105"
+            >
+              <h3 className="text-2xl font-bold text-gold mb-2">
+                {pass.name}
+              </h3>
+
+              <p className="text-gray-300 mb-1">
+                Available:{" "}
+                <span className="text-gold font-semibold">
+                  {pass.remainingCount}
+                </span>
+              </p>
+
+              <p className="text-xl mb-4">₹{pass.price}</p>
+
+              <button
+                disabled={pass.remainingCount <= 0}
+                onClick={() => handleBookNowClick(pass)}
+                className="px-6 py-3 bg-redcarpet rounded-lg hover:bg-gold hover:text-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {pass.remainingCount <= 0 ? "Sold Out" : "Book Now"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Modal */}
+      {selectedPass && (
+        <BookingModal
+          pass={selectedPass}
+          onClose={() => {
+            console.log("🔍 Closing modal");
+            setSelectedPass(null);
+          }}
+          onSubmit={(data) => startPayment(selectedPass, data)}
+        />
+      )}
+    </>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\PaymentSuccessModal.tsx->
+export default function PaymentSuccessModal({
+  bookingId,
+  onClose,
+}: {
+  bookingId: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-xl max-w-md w-full text-center">
+        <h2 className="text-2xl font-bold mb-2">🎉 Booking Confirmed!</h2>
+
+        <p className="text-gray-700 mb-4">
+          Thanks for booking your ticket.
+          <br />
+          New Year’s Eve awaits you ✨
+        </p>
+
+        <div className="space-y-3">
+          <a
+            href={`/ticket/${bookingId}`}
+            className="block w-full py-3 bg-black text-white rounded-lg"
+          >
+            Download Ticket
+          </a>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 border rounded-lg"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\SaveUser.tsx->
+
+// components/SaveUser.tsx
+import { useState } from 'react';
+
+const SaveUser = () => {
+  const [name, setName] = useState<string>('');
+  const [number, setNumber] = useState<string>('');
+
+  const handleSave = async () => {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, number }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      alert('User saved successfully!');
+    } else {
+      alert(`Error: ${data.error}`);
+    }
+  };
+
+  return (
+    <div>
+      <h2>Save User Data</h2>
+      <input
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <input
+        placeholder="Number"
+        value={number}
+        onChange={(e) => setNumber(e.target.value)}
+      />
+      <button onClick={handleSave}>Save User</button>
+    </div>
+  );
+};
+
+export default SaveUser;
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\SignupModal.tsx->
+"use client";
+
+import { useState } from "react";
+
+interface SignupModalProps {
+  onClose: () => void;
+  onSuccess: () => void;
+  onSwitchToLogin: () => void;
+}
+
+export default function SignupModal({ onClose, onSuccess, onSwitchToLogin }: SignupModalProps) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    // Validation
+    if (!name || !phone || !password || !confirmPassword) {
+      setError("All fields are required");
+      return;
+    }
+
+    if (phone.length !== 10) {
+      setError("Phone number must be 10 digits");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        onSuccess();
+        alert("Account created successfully! Please login.");
+        onSwitchToLogin();
+      } else {
+        setError(data.message || "Signup failed");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-br from-red-900 to-black border-2 border-gold p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <h2 className="text-3xl font-bold text-gold text-center mb-6">
+          Sign Up
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-white mb-2 text-sm">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
+              placeholder="Enter your name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-2 text-sm">Phone Number</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+              maxLength={10}
+              className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
+              placeholder="10-digit mobile number"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-2 text-sm">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
+              placeholder="Minimum 6 characters"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-2 text-sm">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-3 rounded-lg bg-black/50 border border-gold/30 text-white focus:border-gold focus:outline-none"
+              placeholder="Re-enter password"
+            />
+          </div>
+
+          {error && (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gold text-black py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Creating Account..." : "Sign Up"}
+          </button>
+
+          <div className="text-center text-sm text-gray-300">
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="text-gold hover:underline font-semibold"
+            >
+              Login
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full mt-2 border border-gold/40 text-white py-3 rounded-lg hover:bg-white/10 transition"
+          >
+            Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\VVIP.tsx->
+"use client";
+
+import { useState } from "react";
+import VVIPContactModal from "@/components/VVIPContactModal";
+
+export default function VVIP() {
+  const [showVVIPModal, setShowVVIPModal] = useState(false);
+
+  return (
+    <>
+      <section className="py-28 px-6 bg-transparent">
+        <div className="max-w-6xl mx-auto border-2 border-gold rounded-3xl p-12 bg-black/40">
+
+          <h2 className="text-4xl font-bold text-gold text-center mb-6">
+            VVIP Experience
+          </h2>
+
+          <p className="text-center text-gray-300 mb-10">
+            An exclusive luxury experience for elite guests.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-10">
+            {[
+              "Personal Butler Service",
+              "Premium Seating Near Stage",
+              "Unlimited Premium Mixers",
+              "Luxury Table Décor",
+              "Dedicated Photographer",
+              "Private Heater Setup",
+              "Personalized Lanterns",
+              "Priority Entry",
+            ].map((item) => (
+              <div key={item} className="flex gap-3 text-white">
+                <span className="text-gold">★</span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            {/* 🚨 MUST BE A BUTTON, NOT <a> */}
+            <button
+              onClick={() => setShowVVIPModal(true)}
+              className="px-10 py-4 bg-gold text-black rounded-xl font-semibold hover:bg-white transition"
+            >
+              Contact for VVIP Booking
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {showVVIPModal && (
+        <VVIPContactModal onClose={() => setShowVVIPModal(false)} />
+      )}
+    </>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\components\VVIPContactModal.tsx->
+"use client";
+
+export default function VVIPContactModal({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="relative w-full max-w-md rounded-2xl border border-gold/30 bg-black p-8 text-center shadow-2xl">
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-gray-400 hover:text-white text-xl"
+        >
+          ✕
+        </button>
+
+        {/* Title */}
+        <h2 className="mb-4 text-3xl font-bold text-gold">
+          VVIP Bookings
+        </h2>
+
+        <p className="mb-6 text-gray-300">
+          For exclusive VVIP tables, premium seating & special arrangements,
+          please contact:
+        </p>
+
+        {/* Contact Details */}
+        <div className="space-y-4">
+          <div>
+            <p className="text-white font-semibold">📞 Phone</p>
+            <a
+              href="tel:+919876543210"
+              className="text-gold hover:underline"
+            >
+              +91 98765 43210
+            </a>
+          </div>
+
+          <div>
+            <p className="text-white font-semibold">💬 WhatsApp</p>
+            <a
+              href="https://wa.me/919876543210"
+              target="_blank"
+              className="text-gold hover:underline"
+            >
+              Chat on WhatsApp
+            </a>
+          </div>
+
+          <div>
+            <p className="text-white font-semibold">📧 Email</p>
+            <a
+              href="mailto:vvip@theredcarpet.com"
+              className="text-gold hover:underline"
+            >
+              vvip@theredcarpet.com
+            </a>
+          </div>
+        </div>
+
+        <p className="mt-6 text-xs text-gray-400">
+          * VVIP bookings are subject to availability
+        </p>
+      </div>
+    </div>
+  );
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\adminAuth.ts->
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+
+export function verifyAdmin() {
+  const token = cookies().get("admin_token")?.value;
+  if (!token) throw new Error("Not authenticated");
+
+  const payload = jwt.verify(
+    token,
+    process.env.JWT_ADMIN_SECRET!
+  ) as any;
+
+  return payload;
+}
+
+export function verifySuperAdmin() {
+  const payload = verifyAdmin();
+  if (payload.role !== "SUPER") {
+    throw new Error("Forbidden");
+  }
+  return payload;
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\auth.ts->
+import jwt from "jsonwebtoken";
+
+export function signToken(adminId: string) {
+  return jwt.sign({ adminId }, process.env.JWT_SECRET!, {
+    expiresIn: "12h",
+  });
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\db.ts->
+// lib/db.ts
+import mongoose from 'mongoose';
+
+const MONGODB_URI = process.env.MONGODB_URI!;
+
+if (!MONGODB_URI) {
+  throw new Error(
+    'Please define the MONGODB_URI environment variable inside .env.local'
+  );
+}
+
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+declare global {
+  var mongoose: MongooseCache | undefined;
+}
+
+let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
+
+if (!global.mongoose) {
+  global.mongoose = cached;
+}
+
+async function dbConnect(): Promise<typeof mongoose> {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts);
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
+}
+
+export default dbConnect;
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\generateQR.ts->
+import QRCode from "qrcode";
+
+export async function generateQR(data: string) {
+  return await QRCode.toDataURL(data);
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\generateTicketPDF.ts->import PDFDocument from "pdfkit";
+
+/**
+ * booking must contain:
+ * - name
+ * - passName
+ * - quantity
+ * - amount
+ * - reference
+ * - qrCode (base64 data URL)
+ */
+export async function generateTicketPDF(booking: any) {
+  const doc = new PDFDocument({
+    size: "A4",
+    margin: 50,
+  });
+
+  const buffers: Buffer[] = [];
+
+  doc.on("data", (chunk) => buffers.push(chunk));
+  doc.on("end", () => {});
+
+  /* ------------------ HEADER ------------------ */
+
+  doc
+    .fontSize(22)
+    .text("🎟 THE RED CARPET NYE", {
+      align: "center",
+    });
+
+  doc
+    .moveDown(0.5)
+    .fontSize(14)
+    .text("Official Entry Pass", { align: "center" });
+
+  doc.moveDown(2);
+
+  /* ------------------ DETAILS ------------------ */
+
+  doc.fontSize(14);
+  doc.text(`Name: ${booking.name}`);
+  doc.text(`Pass: ${booking.passName}`);
+  doc.text(`Quantity: ${booking.quantity}`);
+  doc.text(`Amount: ₹${booking.amount}`);
+  doc.text(`Reference: ${booking.reference}`);
+
+  doc.moveDown(2);
+
+  /* ------------------ QR CODE ------------------ */
+
+  if (booking.qrCode) {
+    // Convert base64 data URL → Buffer
+    const base64Data = booking.qrCode.replace(
+      /^data:image\/png;base64,/,
+      ""
+    );
+
+    const qrBuffer = Buffer.from(base64Data, "base64");
+
+    doc
+      .fontSize(14)
+      .text("Scan this QR code at entry:", {
+        align: "left",
+      });
+
+    doc.moveDown(1);
+
+    doc.image(qrBuffer, {
+      width: 160,
+      align: "center",
+    });
+  } else {
+    doc
+      .fontSize(12)
+      .fillColor("red")
+      .text("QR Code not available", { align: "center" })
+      .fillColor("black");
+  }
+
+  doc.moveDown(3);
+
+  /* ------------------ FOOTER ------------------ */
+
+  doc
+    .fontSize(10)
+    .text(
+      "Please carry this ticket (digital or printed) to the venue.\nQR code is valid for single entry only.",
+      {
+        align: "center",
+      }
+    );
+
+  doc.end();
+
+  return Buffer.concat(buffers);
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\loadRazorpay.ts->
+export default function loadRazorpay(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (document.getElementById("razorpay-script")) {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = "razorpay-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+
+    document.body.appendChild(script);
+  });
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\mongodb.ts->
+import mongoose from 'mongoose';
+
+const MONGODB_URI = process.env.MONGODB_URI as string;
+
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+}
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectToDatabase() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+      return mongoose;
+    });
+  }
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+export default connectToDatabase;
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\razorpay.ts->
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\requireAdmin.ts->import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+export function requireAdmin() {
+  const cookieStore = cookies();
+  const isAdmin = cookieStore.get("admin")?.value;
+
+  if (!isAdmin) {
+    redirect("/admin/login");
+  }
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\sendEmail.ts->
+// lib/sendEmail.ts
+import nodemailer from "nodemailer";
+
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  pdfBuffer?: Buffer
+) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT),
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to,
+    subject,
+    html,
+    attachments: pdfBuffer
+      ? [
+          {
+            filename: "Red-Carpet-Ticket.pdf",
+            content: pdfBuffer,
+          },
+        ]
+      : [],
+  });
+}
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\sendWhatsApp.ts->
+export default async function sendWhatsApp({
+  phone,
+  message,
+}: {
+  phone: string;
+  message: string;
+}) {
+  console.log("📲 WhatsApp sent to:", phone);
+}
+
+D:\SHIVAM\rdc\the-red-carpet-web\lib\ticketEmailTemplate.ts->
+type TicketEmailProps = {
+  name: string;
+  passName: string;
+  qrCode: string;
+};
+
+export function ticketEmailTemplate({
+  name,
+  passName,
+  qrCode,
+}: TicketEmailProps) {
+  return `
+  <div style="
+    font-family: Arial, sans-serif;
+    background-color: #000;
+    color: #fff;
+    padding: 24px;
+    max-width: 600px;
+    margin: auto;
+    border-radius: 12px;
+  ">
+
+    <h1 style="color:#d4af37; text-align:center;">
+      THE RED CARPET 2025
+    </h1>
+
+    <p>Hi <strong>${name}</strong>,</p>
+
+    <p>
+      🎉 Your <strong>${passName}</strong> ticket is <strong>CONFIRMED</strong>.
+    </p>
+
+    <hr style="border:1px solid #333; margin:20px 0;" />
+
+    <p><strong>📍 Venue:</strong> Amber by Sayaji, Bhopal</p>
+    <p><strong>📅 Date:</strong> 31st December 2025</p>
+    <p><strong>⏰ Entry:</strong> From 6:00 PM onwards</p>
+
+    <hr style="border:1px solid #333; margin:20px 0;" />
+
+    <p style="text-align:center;">
+      Please show this QR code at the entry gate
+    </p>
+
+    <div style="text-align:center; margin:20px 0;">
+      <img src="${qrCode}" width="220" />
+    </div>
+
+    <p style="text-align:center; font-size:14px; color:#aaa;">
+      This QR code is valid for one-time entry only.
+    </p>
+
+    <p style="margin-top:30px;">
+      See you on the red carpet ✨
+    </p>
+
+    <p style="font-size:12px; color:#777;">
+      © 2025 THE RED CARPET. All rights reserved.
+    </p>
+
+  </div>
+  `;
+}
+
+
+
+D:\SHIVAM\rdc\the-red-carpet-web\models\Admin.ts->
+import mongoose, { Schema, Document } from "mongoose";
+
+export interface IAdmin extends Document {
+  email: string;
+  password: string;
+  role: "SUPER" | "STAFF";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const AdminSchema = new Schema<IAdmin>(
+  {
+    email: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    role: {
+      type: String,
+      enum: ["SUPER", "STAFF"],
+      default: "STAFF",
+    },
+  },
+  { timestamps: true }
+);
+
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.Admin || mongoose.model("Admin", AdminSchema);
+
+D:\SHIVAM\rdc\the-red-carpet-web\models\Booking.ts->
+import mongoose, { Schema, Document } from "mongoose";
+
+export interface IBooking extends Document {
+  userId?: mongoose.Types.ObjectId;
+  passId: mongoose.Types.ObjectId;
+  passName: string;
+  name: string;
+  email: string;
+  phone: string;
+  quantity: number;
+  amount: number;
+  reference: string;
+  qrCode?: string;
+  razorpayOrderId?: string;
+  paymentId?: string;
+  orderId?: string;
+  paidAt?: Date;
+  status: "PENDING" | "PAID" | "FAILED";
+  isUsed: boolean;
+  usedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const BookingSchema = new Schema<IBooking>(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: "User" },
+    passId: { type: Schema.Types.ObjectId, ref: "Pass", required: true },
+    passName: { type: String, required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    amount: { type: Number, required: true },
+    reference: { type: String, required: true, unique: true },
+    qrCode: String,
+    razorpayOrderId: String,
+    paymentId: String,
+    orderId: String,
+    paidAt: Date,
+    status: {
+      type: String,
+      enum: ["PENDING", "PAID", "FAILED"],
+      default: "PENDING",
+    },
+    isUsed: { type: Boolean, default: false },
+    usedAt: Date,
+  },
+  { timestamps: true }
+);
+
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.Booking || mongoose.model("Booking", BookingSchema);
+
+D:\SHIVAM\rdc\the-red-carpet-web\models\Pass.ts->import mongoose, { Schema, Document } from "mongoose";
+
+export interface IPass extends Document {
+  name: string;
+  price: number;
+  phase?: number;
+  visible?: boolean;
+  remainingCount?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const PassSchema = new Schema<IPass>(
+  {
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    phase: { type: Number },
+    visible: { type: Boolean, default: true },
+    remainingCount: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.Pass || mongoose.model("Pass", PassSchema);
+
+D:\SHIVAM\rdc\the-red-carpet-web\models\SiteContent.ts->
+import mongoose, { Schema, Document } from "mongoose";
+
+export interface SiteContentDocument extends Document {
+  heroTitle: string;
+  heroSubtitle: string;
+  eventDescription: string;
+  backgroundImage: string;
+  animationsEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const SiteContentSchema = new Schema<SiteContentDocument>(
+  {
+    heroTitle: String,
+    heroSubtitle: String,
+    eventDescription: String,
+    backgroundImage: String,
+    animationsEnabled: Boolean,
+  },
+  { timestamps: true }
+);
+
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.SiteContent || mongoose.model("SiteContent", SiteContentSchema);
+
+D:\SHIVAM\rdc\the-red-carpet-web\models\User.ts->
+import mongoose, { Schema, Document } from "mongoose";
+
+export interface IUser extends Document {
+  name?: string;
+  phone: string;
+  email?: string;
+  password: string;
+  bookings: mongoose.Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const UserSchema = new Schema<IUser>(
+  {
+    name: String,
+    phone: { type: String, required: true, unique: true },
+    email: String,
+    password: String,
+    bookings: [{ type: Schema.Types.ObjectId, ref: "Booking" }],
+  },
+  { timestamps: true }
+);
+
+// ✅ Vercel-safe pattern: no generics on model
+export default mongoose.models.User || mongoose.model("User", UserSchema);
+
+.env.local-># the-red-carpet
+new year event app and website
+# =====================
+# APP
+# =====================
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# =====================
+# MONGODB
+# =====================
+MONGODB_URI=mongodb+srv://redcarpetadmin:redcarpetadmin@cluster0.ysq0vmt.mongodb.net/test?retryWrites=true&w=majority
+# =====================
+# RAZORPAY (TEST MODE)
+# =====================
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_Rrgs30T1Dp5Rl3
+RAZORPAY_KEY_SECRET=bTK0wo3VtXrtCxrOMBvU1t0U
+RAZORPAY_KEY_ID=rzp_test_Rrgs30T1Dp5Rl3
+
+# =====================
+# EMAIL (NODEMAILER)
+# =====================
+EMAIL_FROM=The Red Carpet <noreply@redcarpet.com>
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=shivamdangi829@gmail.com
+EMAIL_PASS=Shivam@06V
+
+# =====================
+# ADMIN AUTH
+# =====================
+ADMIN_SECRET=supersecretadminkey
+
+
+ADMIN_EMAIL=admin@redcarpet.com
+ADMIN_PASSWORD=supersecure123
+
+TWILIO_ACCOUNT_SID=ACdcb9661bb10b79ba4375bd6a8d8f3dce
+TWILIO_AUTH_TOKEN=70c20c4ec5a69aa1a57613a1892d6e33
+
+JWT_SECRET=shivamdangi829
+
+JWT_ADMIN_SECRET=adminisking
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

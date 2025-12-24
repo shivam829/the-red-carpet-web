@@ -1,166 +1,208 @@
 "use client";
-export const dynamic = "force-dynamic";
-import Link from "next/link";
-
-import { motion } from "framer-motion";
-import FloatingLanterns from "@/components/FloatingLanterns";
-import Passes from "@/components/Passes";
-import VVIP from "@/components/VVIP";
-import LayoutMap from "@/components/LayoutMap";
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
-import InstagramReelsWidget from "@/components/InstagramReelsWidget";
-import DistrictAppBadge from "@/components/DistrictAppBadge";
+import VideoReelBar from "@/components/VideoReelBar";
+import PassesDisplay from "@/components/PassesDisplay";
 
-export default function App() {
+const DISTRICT_URL =
+  "https://www.district.in/events/the-red-carpet-bhopals-grandest-new-year-celebration-dec31-2025-buy-tickets";
+
+const targetDate = new Date("2025-12-31T23:59:59+05:30");
+
+function Countdown() {
+  const [mounted, setMounted] = useState(false);
+  const [time, setTime] = useState({ d: 0, h: 0, m: 0, s: 0 });
+
+  useEffect(() => {
+    setMounted(true);
+
+    const timer = setInterval(() => {
+      const diff = targetDate.getTime() - new Date().getTime();
+      if (diff <= 0) return clearInterval(timer);
+
+      setTime({
+        d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        h: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        m: Math.floor((diff / (1000 * 60)) % 60),
+        s: Math.floor((diff / 1000) % 60),
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
-    <div>
-      {/* Header */}
+    <div className="flex gap-6 mt-8 flex-wrap justify-center text-center">
+      {Object.entries(time).map(([key, value]) => (
+        <div
+          key={key}
+          className="px-5 py-4 bg-black/60 rounded-xl backdrop-blur"
+        >
+          <div className="text-3xl font-bold text-gold">{value}</div>
+          <div className="text-xs uppercase text-gray-400">
+            {key === "d"
+              ? "Days"
+              : key === "h"
+              ? "Hours"
+              : key === "m"
+              ? "Minutes"
+              : "Seconds"}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <>
       <Header />
 
-      {/* Instagram Reels Widget */}
-      <InstagramReelsWidget />
+      {/* HERO – STARTS AFTER HEADER */}
+      <section className="min-h-screen pt-28 flex flex-col items-center justify-center text-center px-6 bg-black">
+        <p className="text-xs tracking-[0.35em] text-gray-400 animate-pulse">
+          SUNDOWN PRESENTS
+        </p>
 
-      {/* Main Content */}
-      <main className="relative text-white lg:pr-80">
+        <img
+          src="/logo.png"
+          alt="The Red Carpet"
+          className="w-72 md:w-[380px] mt-6"
+        />
 
-        {/* ================= HERO SECTION ================= */}
-        <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden">
+        <p className="mt-6 text-lg text-gray-300">
+          Central India’s Biggest Open-Air New Year Celebration
+        </p>
 
-          {/* Background Image (NON-INTERACTIVE) */}
-          <div
-            className="absolute inset-0 bg-cover bg-center pointer-events-none"
-            style={{
-              backgroundImage:
-                "url(https://images.unsplash.com/photo-1541532713592-79a0317b6b77)",
-            }}
-          />
+        <p className="mt-2 text-gray-400">
+          Wed, 31 Dec · 7:30 PM – Thu, 1 Jan · 2:00 AM
+        </p>
 
-          {/* Dark Overlay (NON-INTERACTIVE) */}
-          <div className="absolute inset-0 bg-black/70 pointer-events-none" />
+        <p className="mt-1 text-gray-400">
+          AMBER – A Unit of Sayaji, Bhopal
+        </p>
 
-          {/* Floating Lanterns (NON-INTERACTIVE) */}
-          <div className="pointer-events-none">
-            <FloatingLanterns />
-          </div>
+        <Countdown />
 
-          {/* ===== INTERACTIVE CONTENT LAYER ===== */}
-          <div className="relative z-30 flex flex-col items-center">
+        <button
+          onClick={() => window.open(DISTRICT_URL, "_blank")}
+          className="mt-10 bg-gold text-black px-8 py-4 rounded-full font-semibold shadow-xl hover:scale-105 transition"
+        >
+          🎟 Book Passes Now
+        </button>
+      </section>
 
-            <motion.img
-              src="/logo.png"
-              alt="The Red Carpet Logo"
-              className="w-120 mb-0"
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1 }}
-            />
+      {/* EXPERIENCE */}
+      <section id="experience" className="section bg-black/70">
+        <h2 className="section-title">What Awaits You</h2>
+        <VideoReelBar />
+      </section>
 
-            <motion.h1
-              className="text-5xl md:text-7xl font-bold text-gold -mt-96"
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              THE RED CARPET
-            </motion.h1>
+      {/* PASSES */}
+      <PassesDisplay />
 
-            <motion.p
-              className="mt-2 text-lg md:text-xl text-gray-200"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              Central India's Biggest Open-Air New Year Celebration
-            </motion.p>
+      {/* EVENT GUIDE */}
+      <section className="section bg-black/80">
+        <h2 className="section-title">Event Guide</h2>
+        <div className="grid md:grid-cols-2 gap-8 mt-12 max-w-4xl mx-auto text-gray-300">
+          <div>🌐 Language: Hindi, English</div>
+          <div>⏱ Duration: 6 Hours 30 Minutes</div>
+          <div>🎟 Tickets Needed For: 5 yrs & above</div>
+          <div>👨‍👩‍👧 Entry Allowed For: All ages</div>
+          <div>🌿 Layout: Outdoor</div>
+          <div>🪑 Seating: Seated & Standing</div>
+          <div>👶 Kid Friendly: Yes</div>
+          <div>🐾 Pet Friendly: No</div>
+        </div>
+      </section>
 
-            <motion.p
-              className="mt-2 text-gray-300"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.9 }}
-            >
-              31st December 2025 · Amber by Sayaji, Bhopal
-            </motion.p>
+      {/* VENUE */}
+      <section id="venue" className="section bg-black/70">
+        <h2 className="section-title">📍 Venue</h2>
 
-            {/* CTA ROW (FULLY CLICKABLE) */}
-            <div className="mt-10 flex items-center justify-center gap-4 flex-wrap pointer-events-auto">
-              <motion.a
-                href="#passes"
-                className="px-10 py-4 bg-redcarpet rounded-xl text-lg hover:bg-gold hover:text-black transition cursor-pointer"
-                whileHover={{ scale: 1.05 }}
-              >
-                Reserve Your Entry
-              </motion.a>
-
-              <DistrictAppBadge />
-            </div>
-          </div>
-        </section>
-        {/* ================= END HERO ================= */}
-
-
-        {/* NIGHT UNFOLDS */}
-        <section className="py-24 px-6 bg-black">
-          <h2 className="text-4xl font-bold text-gold text-center mb-14">
-            The Night Unfolds
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-            {[
-              { title: "Live DJs & EDM", video: "/techno-dj.mp4" },
-              { title: "Fire Performers", video: "/fire-Performers.mp4" },
-              { title: "Midnight Fireworks", video: "/fireworks.mp4" },
-            ].map((item) => (
-              <motion.div
-                key={item.title}
-                className="rounded-xl overflow-hidden bg-black/60 border border-gold/20"
-                whileHover={{ scale: 1.03 }}
-              >
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="h-56 w-full object-cover"
-                >
-                  <source src={item.video} type="video/mp4" />
-                </video>
-                <div className="p-6 text-center text-lg">
-                  {item.title}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* PASSES */}
-        <Passes />
-
-        {/* VVIP */}
-        <VVIP />
-
-        {/* EVENT MAP */}
-        <LayoutMap />
-
-        <Link href="/events/red-carpet-nye-2025">
-  <button className="px-4 py-2 border border-gold text-gold rounded-lg">
-    View Event Details
-  </button>
-</Link>
-
-
-        {/* FOOTER */}
-        <footer className="py-12 px-6 text-center text-gray-300 bg-black/90 border-t border-gold/20">
-          <div className="max-w-4xl mx-auto">
-            <p className="mb-2">📍 Amber by Sayaji, Bhopal</p>
-            <p className="mb-2">📞 +91 7000443100</p>
-            <p className="text-sm text-gray-500 mt-4">
-              © 2025 THE RED CARPET. All rights reserved.
+        <div className="mt-12 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 className="text-xl text-gold font-semibold">
+              AMBER – A Unit of Sayaji
+            </h3>
+            <p className="mt-2 text-gray-300">
+              Hoshangabad Road, Bhopal, Madhya Pradesh
             </p>
           </div>
-        </footer>
 
-      </main>
-    </div>
+          <div className="rounded-xl overflow-hidden border border-gold/30">
+            <iframe
+              src="https://maps.google.com/maps?q=23.1772918,77.45960269999999&z=15&output=embed"
+              className="w-full h-72"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* TERMS */}
+      <section id="terms" className="section bg-black/80">
+        <h2 className="section-title">Terms & Conditions</h2>
+        <ul className="mt-10 max-w-4xl mx-auto text-left text-gray-300 list-disc list-inside space-y-3">
+          <li>Please carry a valid ID proof.</li>
+          <li>No refunds on purchased tickets.</li>
+          <li>Security procedures including frisking apply.</li>
+          <li>No hazardous or prohibited items allowed.</li>
+          <li>Organisers not responsible for injury or loss.</li>
+          <li>People in an inebriated state may be denied entry.</li>
+          <li>Late entry may be denied.</li>
+          <li>Venue rules apply.</li>
+        </ul>
+      </section>
+
+      {/* FLOATING CTA */}
+      <button
+        onClick={() => window.open(DISTRICT_URL, "_blank")}
+        className="fixed bottom-6 right-6 z-50 bg-gold text-black px-6 py-4 rounded-full font-semibold shadow-xl animate-pulse hover:scale-110 transition"
+      >
+        🎟 Book Now – Limited Passes
+      </button>
+
+      {/* FOOTER */}
+<footer className="py-12 text-center text-gray-400 bg-black">
+  <div className="flex justify-center items-center gap-8 mb-6">
+    {/* Instagram */}
+    <a
+      href="https://www.instagram.com/theredcarpet2026"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:scale-110 transition"
+    >
+      <img
+        src="/instalogo.jpg"
+        alt="Instagram"
+        className="w-8 h-8"
+      />
+    </a>
+
+    {/* WhatsApp */}
+    <a
+      href="https://wa.me/917000443100"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:scale-110 transition"
+    >
+      <img
+        src="/whatsapp.png"
+        alt="WhatsApp"
+        className="w-8 h-8"
+      />
+    </a>
+  </div>
+
+  <p className="text-sm">
+    © 2025 Sundown Events · The Red Carpet
+  </p>
+</footer>
+
+    </>
   );
 }

@@ -11,19 +11,19 @@ import { cookies } from "next/headers";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { phone, password } = body;
+    const { identifier, password } = body;
 
-    if (!phone || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
-        { success: false, message: "Phone and password required" },
+        { success: false, message: "Phone/Email and password required" },
         { status: 400 }
       );
     }
 
-    /* 🔐 ADMIN LOGIN (HARDCODED – SAFE) */
-    if (phone === "1234567890" && password === "redcarpet@1") {
+    /* 🔐 ADMIN LOGIN */
+    if (identifier === "1234567890" && password === "redcarpet@1") {
       const adminToken = jwt.sign(
-        { role: "admin", phone },
+        { role: "admin", phone: identifier },
         process.env.JWT_SECRET!,
         { expiresIn: "1d" }
       );
@@ -36,20 +36,18 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        user: {
-          name: "Admin",
-          phone,
-          role: "admin",
-        },
+        user: { name: "Admin", role: "admin" },
         redirect: "/admin/dashboard",
       });
     }
 
-    /* 👤 NORMAL USER LOGIN (UNCHANGED) */
     await connectDB();
 
-    const user = await User.findOne({ phone });
-    if (!user) {
+    const user = await User.findOne({
+      $or: [{ phone: identifier }, { email: identifier }],
+    });
+
+    if (!user || !user.password) {
       return NextResponse.json(
         { success: false, message: "Invalid credentials" },
         { status: 401 }
@@ -81,6 +79,7 @@ export async function POST(req: Request) {
       user: {
         name: user.name,
         phone: user.phone,
+        email: user.email,
       },
     });
   } catch (err) {

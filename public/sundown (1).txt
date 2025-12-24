@@ -1,0 +1,43 @@
+# the-red-carpet
+new year event app and website
+# =====================
+# APP
+# =====================
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# =====================
+# MONGODB
+# =====================
+MONGODB_URI=mongodb+srv://redcarpetadmin:redcarpetadmin@cluster0.ysq0vmt.mongodb.net/?appName=Cluster0
+
+# =====================
+# RAZORPAY (TEST MODE)
+# =====================
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_Rrgs30T1Dp5Rl3
+RAZORPAY_KEY_SECRET=bTK0wo3VtXrtCxrOMBvU1t0U
+RAZORPAY_KEY_ID=rzp_test_Rrgs30T1Dp5Rl3
+
+# =====================
+# EMAIL (NODEMAILER)
+# =====================
+EMAIL_FROM=The Red Carpet <noreply@redcarpet.com>
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=shivamdangi829@gmail.com
+EMAIL_PASS=Shivam@06V
+
+# =====================
+# ADMIN AUTH
+# =====================
+ADMIN_SECRET=supersecretadminkey
+
+
+ADMIN_EMAIL=admin@redcarpet.com
+ADMIN_PASSWORD=supersecure123
+
+TWILIO_ACCOUNT_SID=ACdcb9661bb10b79ba4375bd6a8d8f3dce
+TWILIO_AUTH_TOKEN=70c20c4ec5a69aa1a57613a1892d6e33
+
+JWT_SECRET=shivamdangi829
+
+JWT_ADMIN_SECRET=adminisking

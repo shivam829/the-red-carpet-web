@@ -2,127 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #0f0f0f;
-  color: white;
-}
-
 html {
   scroll-behavior: smooth;
 }
 
-/* 🔥 BLINKING BANNER ANIMATION */
-@keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.45;
-  }
+body {
+  background: #0f0f0f;
+  color: white;
 }
 
-.animate-blink {
-  animation: blink 1.2s infinite ease-in-out;
+.section {
+  @apply py-24 px-6 max-w-6xl mx-auto;
 }
 
-/* FLOATING LANTERNS */
-@keyframes lantern {
+.section-title {
+  @apply text-4xl font-bold text-gold text-center;
+}
+
+.section-text {
+  @apply mt-6 text-gray-300 text-center max-w-3xl mx-auto;
+}
+
+/* URGENT BADGE ANIMATION */
+@keyframes urgent {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  25% { transform: scale(1.12, 0.92); }
+  50% { transform: scale(0.9, 1.1); opacity: 0.6; }
+  75% { transform: scale(1.08); }
+}
+
+.animate-urgent {
+  animation: urgent 1.2s infinite ease-in-out;
+}
+
+@keyframes fadeInUp {
   from {
-    transform: translateY(0);
-    opacity: 0.6;
+    opacity: 0;
+    transform: translateY(10px);
   }
   to {
-    transform: translateY(-120vh);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 1.2s ease-out forwards;
+}
+@keyframes fadeInUp {
+  from {
     opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.animate-lantern {
-  animation: lantern 18s linear infinite;
-}
-
-/* PRINT STYLES */
-@media print {
-  body {
-    background: #5a0f0f !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .print\:hidden {
-    display: none !important;
-  }
-
-  .ticket-card {
-    background: linear-gradient(
-      135deg,
-      #3b0a0a,
-      #7a1212,
-      #b8860b
-    ) !important;
-    color: white !important;
-    border-radius: 20px !important;
-    padding: 24px !important;
-  }
-  @media print {
-  body * {
-    visibility: hidden;
-  }
-
-  .ticket-card,
-  .ticket-card * {
-    visibility: visible;
-  }
-
-  .ticket-card {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    box-shadow: none !important;
-  }
-}  @media print {
-  .ticket-actions {
-    display: none !important;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
-
-  .ticket-card,
-  .ticket-card * {
-    visibility: visible !important;
-  }
-
-  .ticket-card {
-    position: fixed !important;
-    inset: 0 !important;
-    margin: auto !important;
-    max-width: 420px !important;
-    width: 100% !important;
-    box-shadow: none !important;
-  }
-}
-
-@media print {
-  body * {
-    visibility: hidden;
-  }
-
-  .print-container,
-  .print-container * {
-    visibility: visible;
-  }
-
-  .print-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
-}
-
- 
+.animate-fade-in-up {
+  animation: fadeInUp 1s ease-out forwards;
 }

@@ -12,6 +12,7 @@ import EventVenue from "@/components/event/EventVenue";
 import EventTerms from "@/components/event/EventTerms";
 import EventFooter from "@/components/event/EventFooter";
 import EventVideoBackground from "@/components/event/EventVideoBackground";
+import EventInstructions from "@/components/event/EventInstructions"
 
 export default function RedCarpetEventPage() {
   return (
@@ -36,7 +37,7 @@ export default function RedCarpetEventPage() {
           <EventOffers />
           <EventGuide />
           <EventPassDetails />
-         
+           <EventInstructions/>
           <EventVenue />
           <EventTerms />
           <EventVideoBackground />

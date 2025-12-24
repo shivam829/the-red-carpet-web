@@ -57,7 +57,7 @@ ${ticketUrl}
 
         {/* LOGO */}
         <div className="text-center mb-6">
-          <img src="/logo.png" className="h-40 mx-auto mb-4" />
+          <img src="/logo1.png" className="h-40 mx-auto mb-4" />
           <h1 className="text-xl font-bold">THE RED CARPET</h1>
           <p className="text-sm opacity-80">Official Entry Pass</p>
         </div>

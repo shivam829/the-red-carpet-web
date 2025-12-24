@@ -1,15 +1,13 @@
-export default function EventInstructions() {
+"use client";
+import Passes from "@/components/Passes";
+
+export default function EventPassDetails() {
   return (
     <section>
-      <h2 className="text-3xl font-bold text-gold mb-4">
-        Instructions
+      <h2 className="text-3xl font-bold text-gold mb-6">
+        Choose Tickets
       </h2>
-      <ul className="list-disc pl-6 text-gray-300 space-y-2">
-        <li>Carry valid ID proof</li>
-        <li>No re-entry allowed</li>
-        <li>No dangerous items permitted</li>
-        <li>Organisers reserve right of admission</li>
-      </ul>
+      <Passes />
     </section>
   );
 }

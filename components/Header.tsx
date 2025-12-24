@@ -1,122 +1,52 @@
 "use client";
-
-import { useState, useEffect } from "react";
-import LoginModal from "./LoginModal";
-import SignupModal from "./SignupModal";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Header() {
-  const [user, setUser] = useState<any>(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
-  const fetchUser = async () => {
-    try {
-      const res = await fetch("/api/auth/me", {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) setUser(data.user);
-    } catch {
-      setUser(null);
-    }
-  };
-
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    setUser(null);
-    window.location.href = "/";
-  };
-
   return (
-    <>
-      {/* 🎟️ MY TICKETS — TOP LEFT */}
-      {user && (
-        <div className="fixed top-16 left-5 z-50">
-          <Link
-            href="/my-tickets"
-            className="bg-black/70 border border-gold/40 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gold/20 transition backdrop-blur-sm font-medium"
-          >
-            🎟️ My Tickets
-          </Link>
-        </div>
-      )}
+    <header className="fixed top-0 left-0 w-full h-28 z-50">
+      {/* HEADER BACKGROUND ONLY */}
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-50"
+        style={{ backgroundImage: "url('/sundown (3).jpg')" }}
+      />
 
-      {/* HEADER ACTIONS — TOP RIGHT */}
-      <div className="fixed top-0 right-0 z-50 p-4 flex gap-3">
-        {user ? (
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="bg-gold text-black px-6 py-3 rounded-full font-semibold hover:bg-yellow-600 transition shadow-lg"
-            >
-              👤 {user.name}
-            </button>
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 bg-black/70" />
 
-            {showMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-black border border-gold/30 rounded-lg shadow-xl">
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-3 text-red-400 hover:bg-red-900/20 transition"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
-            <button
-              onClick={() => setShowLogin(true)}
-              className="bg-gold/90 text-black px-6 py-3 rounded-full font-semibold hover:bg-gold transition shadow-lg"
-            >
-              Login
-            </button>
+      {/* HEADER CONTENT */}
+      <div className="relative max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
+        {/* LEFT – AMBER */}
+        <Image
+          src="/amber.png"
+          alt="Amber by Sayaji"
+          width={110}
+          height={60}
+          priority
+        />
 
-            <button
-              onClick={() => setShowSignup(true)}
-              className="bg-white/10 text-white px-6 py-3 rounded-full font-semibold border-2 border-gold/50 hover:bg-gold/20 hover:border-gold transition shadow-lg"
+        {/* CENTER – NAV */}
+        <nav className="hidden md:flex gap-8 text-sm tracking-wide text-gray-200">
+          {["About", "Experience", "Passes", "Venue", "Terms"].map((item) => (
+            <Link
+              key={item}
+              href={`#${item.toLowerCase()}`}
+              className="hover:text-gold transition"
             >
-              Sign Up
-            </button>
-          </>
-        )}
+              {item}
+            </Link>
+          ))}
+        </nav>
+
+        {/* RIGHT – SAYAJI */}
+        <Image
+          src="/sayaji.png"
+          alt="Sayaji"
+          width={110}
+          height={60}
+          priority
+        />
       </div>
-
-      {/* LOGIN MODAL */}
-      {showLogin && (
-        <LoginModal
-          onClose={() => setShowLogin(false)}
-          onSuccess={(u) => {
-            setUser(u);
-            setShowLogin(false);
-            window.dispatchEvent(new Event("userLoggedIn"));
-          }}
-          onSwitchToSignup={() => {
-            setShowLogin(false);
-            setShowSignup(true);
-          }}
-        />
-      )}
-
-      {/* SIGNUP MODAL */}
-      {showSignup && (
-        <SignupModal
-          onClose={() => setShowSignup(false)}
-          onSwitchToLogin={() => {
-            setShowSignup(false);
-            setShowLogin(true);
-          }}
-        />
-      )}
-    </>
+    </header>
   );
 }
