@@ -18,7 +18,7 @@ const DISTRICT_URL =
 
 export default function PassesDisplay() {
   return (
-    <section id="passes" className="section bg-black/80">
+    <section id="passes" className="section bg-black/80 animate-fade-up">
       <h2 className="section-title">Choose Tickets</h2>
 
       <div className="grid md:grid-cols-3 gap-8 mt-14">
@@ -26,7 +26,16 @@ export default function PassesDisplay() {
           <div
             key={p.name}
             onClick={() => window.open(DISTRICT_URL, "_blank")}
-            className="cursor-pointer border border-gold/30 rounded-xl p-6 bg-black/60 hover:scale-105 transition"
+            className="
+              cursor-pointer
+              border border-gold/30
+              rounded-xl
+              p-6
+              bg-black/60
+              transition
+              hover:scale-[1.06]
+              hover:shadow-[0_0_30px_rgba(255,215,0,0.25)]
+            "
           >
             <h3 className="text-lg font-semibold text-gold">{p.name}</h3>
             <p className="text-2xl mt-2">{p.price}</p>

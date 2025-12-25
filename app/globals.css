@@ -11,10 +11,10 @@ body {
   color: white;
 }
 
+/* SECTION LAYOUT (UNCHANGED) */
 .section {
   @apply py-14 md:py-20 px-4 md:px-6 max-w-6xl mx-auto;
 }
-
 
 .section-title {
   @apply text-4xl font-bold text-gold text-center;
@@ -24,43 +24,140 @@ body {
   @apply mt-6 text-gray-300 text-center max-w-3xl mx-auto;
 }
 
-/* URGENT BADGE ANIMATION */
-@keyframes urgent {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  25% { transform: scale(1.12, 0.92); }
-  50% { transform: scale(0.9, 1.1); opacity: 0.6; }
-  75% { transform: scale(1.08); }
-}
+/* ================= ANIMATIONS ================= */
 
-.animate-urgent {
-  animation: urgent 1.2s infinite ease-in-out;
-}
-
-@keyframes fadeInUp {
+/* HERO REVEAL */
+@keyframes heroReveal {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-hero {
+  animation: heroReveal 1.2s ease-out forwards;
+}
+
+/* SECTION FADE */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-
-.animate-fade-in-up {
-  animation: fadeInUp 1.2s ease-out forwards;
+.animate-fade-up {
+  animation: fadeUp 1s ease-out forwards;
 }
-@keyframes fadeInUp {
+
+/* VIDEO GLOW */
+.video-glow {
+  box-shadow: 0 0 60px rgba(255, 215, 0, 0.15);
+}
+
+/* PASS CARD HOVER */
+.pass-hover {
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.pass-hover:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+/* FLOATING CTA */
+@keyframes breathe {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.animate-breathe {
+  animation: breathe 2.5s infinite ease-in-out;
+}
+/* ================= FIRECRACKER INTRO ================= */
+
+.firecracker-rise {
+  position: absolute;
+  bottom: -40px;
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle, gold, orange);
+  border-radius: 50%;
+  animation: riseUp 1.2s ease-out forwards;
+}
+
+@keyframes riseUp {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-50vh) scale(1.2);
+    opacity: 1;
+  }
+}
+
+.firecracker-explode {
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, gold, red, transparent);
+  border-radius: 50%;
+  animation: explode 0.8s ease-out forwards;
+}
+
+@keyframes explode {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(10);
+    opacity: 0;
+  }
+}
+
+/* ================= LOGO ================= */
+
+.animate-logo-reveal {
+  animation: logoReveal 0.8s ease-out forwards;
+}
+
+@keyframes logoReveal {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: scale(0.7);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 1s ease-out forwards;
+/* ================= DYNAMITE ================= */
+
+.dynamite-pop {
+  font-size: 64px;
+  animation: dynamiteBoom 0.8s ease-out forwards;
+}
+
+@keyframes dynamiteBoom {
+  0% {
+    transform: scale(0.6) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg);
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }
